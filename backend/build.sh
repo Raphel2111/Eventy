@@ -6,3 +6,6 @@ pip install -r requirements.txt
 
 python manage.py collectstatic --no-input
 python manage.py migrate
+
+# Create initial superuser if it doesn't exist
+python manage.py create_initial_superuser
