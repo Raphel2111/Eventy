@@ -57,7 +57,7 @@ instance.interceptors.response.use(undefined, async (error) => {
             }
             isRefreshing = true;
             try {
-                const resp = await axios.post('http://localhost:8000/api/token/refresh/', { refresh: refreshToken });
+                const resp = await axios.post(BACKEND_BASE + '/api/token/refresh/', { refresh: refreshToken });
                 const newToken = resp.data.access;
                 localStorage.setItem('access_token', newToken);
                 instance.defaults.headers.common['Authorization'] = 'Bearer ' + newToken;
