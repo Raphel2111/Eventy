@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EventoApp Prototype</title>
+    <style>
+      :root{ --accent:#2563eb; --muted:#6b7280; --card-bg:#fff }
+      html,body{height:100%}
+      body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin: 0; background:#f3f4f6; color:#111 }
+      .container { max-width: 1100px; margin: 28px auto; padding: 16px }
+      header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px }
+      header h1{ margin:0; font-size:1.25rem }
+      .card { background:var(--card-bg); border:1px solid #e6e9ee; padding: 16px; margin-bottom: 12px; border-radius: 10px; box-shadow: 0 1px 2px rgba(16,24,40,0.03) }
+      label { display:block; margin-top:8px; font-size:0.95rem }
+      input, select, button, textarea { padding:8px; margin-top:6px; width:100%; box-sizing: border-box; border:1px solid #e6e9ee; border-radius:6px }
+      .row { display:flex; gap:12px; align-items:flex-start }
+      .col { flex:1 }
+      .small { width: auto; display:inline-block }
+      .muted { color:var(--muted); font-size:0.9em }
+      button{ background:var(--accent); color:white; border:none; cursor:pointer; padding:8px 12px; border-radius:6px }
+      button.secondary{ background:#111827; opacity:0.07; color:var(--muted) }
+      .list-inline{ display:flex; gap:8px; flex-wrap:wrap }
+      .item { padding:10px; border-radius:8px; background:#fbfdff; border:1px solid #eef2ff }
+      .topbar { display:flex; gap:12px; align-items:center }
+      .spinner{ width:16px; height:16px; border-radius:50%; border:2px solid #e5e7eb; border-top-color:var(--accent); animation:spin 1s linear infinite; display:inline-block }
+      @keyframes spin{ to{ transform:rotate(360deg) } }
+      .errorbox{ background:#fff1f2; border:1px solid #fecaca; color:#991b1b; padding:8px; border-radius:6px }
+    </style>
+    <!-- React + ReactDOM + Babel for JSX in the browser (development only prototype) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="root" class="container"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      // Simple helper for token storage
+      const tokenKey = 'evento_tokens';
+
+      function saveTokens(tokens){
+        localStorage.setItem(tokenKey, JSON.stringify(tokens));
+      }
+      function loadTokens(){
+        try { return JSON.parse(localStorage.getItem(tokenKey) || 'null'); } catch(e){return null}
+      }
+      function clearTokens(){ localStorage.removeItem(tokenKey); }
+
+      // Axios instance that attaches access token if available
+      // Use relative base so the prototype works when served from Django at the same origin
+      const api = axios.create({ baseURL: '' });
+      api.interceptors.request.use(cfg => {
+        const t = loadTokens();
+        if(t && t.access) cfg.headers.Authorization = 'Bearer ' + t.access;
+        return cfg;
+      });
+
+      function App(){
+        const [tokens, setTokens] = useState(loadTokens());
+        const [user, setUser] = useState(null);
+
+        useEffect(()=>{ if(tokens) setUser({}); else setUser(null); },[tokens]);
+
+        function onLoginSuccess(t){ saveTokens(t); setTokens(t); }
+        function logout(){ clearTokens(); setTokens(null); setUser(null); }
+
+        return (
+          <div>
+            <header>
+              <h1>EventoApp — Prototype</h1>
+              <div className="topbar">
+                {tokens && <div className="muted">Conectado</div>}
+                {tokens ? <button onClick={logout} className="small">Cerrar sesión</button> : null}
+              </div>
+            </header>
+
+            {!tokens ? (
+              <div className="card">
+                <h3>Iniciar sesión</h3>
+                <Login onSuccess={onLoginSuccess} />
+                <p className="muted">Usa tus credenciales de Django. El backend debe estar corriendo en la misma máquina.</p>
+              </div>
+            ) : (
+              <>
+                <div className="row">
+                  <div className="col">
+                    <div className="card">
+                      <h3>Eventos</h3>
+                      <EventList />
+                    </div>
+                    <div className="card">
+                      <h3>Mis Grupos</h3>
+                      <GroupList />
+                    </div>
+                  </div>
+                  <div className="col" style={{maxWidth:360}}>
+                    <div className="card">
+                      <h3>Usuarios</h3>
+                      <UserList />
+                    </div>
+                    <div className="card">
+                      <h3>Crear Distribution Group</h3>
+                      <GroupForm />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )
+      }
+
+      function Login({onSuccess}){
+        const [username,setUsername]=useState('');
+        const [password,setPassword]=useState('');
+        const [loading,setLoading]=useState(false);
+        const [error,setError]=useState('');
+
+        async function submit(e){
+          e.preventDefault(); setLoading(true); setError('');
+          try{
+            const res = await axios.post('http://127.0.0.1:8000/api/token/', { username, password });
+            onSuccess(res.data);
+          }catch(err){
+            setError('Login failed — check credentials and backend.');
+          }finally{ setLoading(false); }
+        }
+
+        return (
+          <form onSubmit={submit}>
+            <label>Username<input value={username} onChange={e=>setUsername(e.target.value)} /></label>
+            <label>Password<input type="password" value={password} onChange={e=>setPassword(e.target.value)} /></label>
+            <div style={{marginTop:8}}>
+              <button type="submit">{loading? 'Logging...':'Login'}</button>
+            </div>
+            {error && <div style={{color:'red',marginTop:8}}>{error}</div>}
+          </form>
+        )
+      }
+
+      function EventList(){
+        const [events,setEvents] = useState([]);
+        const [loading,setLoading] = useState(true);
+        const [error,setError] = useState('');
+
+        useEffect(()=>{ fetchEvents(); },[]);
+
+        async function fetchEvents(){
+          setLoading(true); setError('');
+          try{
+            const res = await api.get('/api/events/');
+            const data = res.data;
+            // DRF viewsets may return a paginated object {count, next, previous, results: []}
+            if (Array.isArray(data)) {
+              setEvents(data);
+            } else if (data && Array.isArray(data.results)) {
+              setEvents(data.results);
+            } else {
+              // fallback: try to find array in the response
+              const arr = Object.values(data).find(v => Array.isArray(v));
+              setEvents(arr || []);
+            }
+          }catch(err){ setError('Could not load events (CORS/backend).'); }
+          setLoading(false);
+        }
+
+        if(loading) return <div className="muted"><span className="spinner"></span> Cargando eventos...</div>
+        if(error) return <div className="errorbox">{error}</div>
+
+        return (
+          <div>
+            {events.length===0 ? <div className="muted">No hay eventos.</div> : (
+              <div className="list-inline">
+                {events.map(ev => (
+                  <div className="item" key={ev.id}>
+                    <div style={{fontWeight:600}}>{ev.title || ev.name || ('Evento #' + ev.id)}</div>
+                    <div className="muted" style={{fontSize:12}}>{ev.date || ev.start_time || ''}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      function UserList(){
+        const [users,setUsers] = useState([]);
+        useEffect(()=>{ api.get('/api/users/for_select/').then(r=>{
+          const d = r.data;
+          if (Array.isArray(d)) setUsers(d);
+          else if (d && Array.isArray(d.results)) setUsers(d.results);
+          else setUsers([]);
+        }).catch(()=>{}); },[]);
+        return (
+          <div>
+            {users.length===0 ? <div className="muted">No hay usuarios disponibles.</div> : (
+              <ul>{users.map(u => <li key={u.id}>{u.username} <span className="muted">({u.email || 'sin-email'})</span></li>)}</ul>
+            )}
+          </div>
+        )
+      }
+
+      // New: list groups belonging to the authenticated user
+      function GroupList(){
+        const [groups,setGroups] = useState([]);
+        const [loading,setLoading] = useState(true);
+        useEffect(()=>{ load(); },[]);
+        function load(){ setLoading(true); api.get('/api/groups/').then(r=>{
+          const d = r.data; if(Array.isArray(d)) setGroups(d); else if(d && Array.isArray(d.results)) setGroups(d.results); else setGroups([]);
+        }).catch(()=>setGroups([])).finally(()=>setLoading(false)); }
+        if(loading) return <div className="muted"><span className="spinner"></span> Cargando grupos...</div>
+        return (
+          <div>
+            {groups.length===0 ? <div className="muted">No perteneces a ningún grupo.</div> : (
+              <ul>
+                {groups.map(g => <li key={g.id}><strong>{g.name}</strong> <div className="muted" style={{fontSize:12}}>Miembros: { (g.members||[]).length }</div></li>)}
+              </ul>
+            )}
+          </div>
+        )
+      }
+
+      function GroupForm(){
+        // Supports create and edit via props
+        const [name,setName]=useState('');
+        const [users,setUsers]=useState([]);
+        const [selected,setSelected]=useState(new Set());
+        const [status,setStatus]=useState('');
+        const [editingGroup,setEditingGroup] = useState(null);
+
+        useEffect(()=>{ api.get('/api/users/for_select/').then(r=>setUsers(r.data)).catch(()=>setUsers([])); },[]);
+
+        // If parent passes an editing group via a global event, pick it up
+        useEffect(()=>{
+          const h = (ev)=>{
+            const g = ev.detail;
+            if(!g){ setEditingGroup(null); setName(''); setSelected(new Set()); setStatus(''); return }
+            setEditingGroup(g);
+            setName(g.name||'');
+            setSelected(new Set((g.members||[])));
+            setStatus('editing');
+          };
+          window.addEventListener('edit-group', h);
+          return ()=> window.removeEventListener('edit-group', h);
+        },[]);
+
+        function toggle(id){ const s = new Set(selected); if(s.has(id)) s.delete(id); else s.add(id); setSelected(s); }
+
+        async function submit(e){
+          e.preventDefault(); setStatus('sending');
+          try{
+            const payload = { name, members: Array.from(selected) };
+            if(editingGroup && editingGroup.id){
+              await api.put('/api/groups/' + editingGroup.id + '/', payload);
+              setStatus('updated');
+            } else {
+              await api.post('/api/groups/', payload);
+              setStatus('created');
+            }
+            // notify others
+            window.dispatchEvent(new CustomEvent('groups-changed'));
+            setName(''); setSelected(new Set()); setEditingGroup(null);
+          }catch(err){ setStatus('error: ' + (err?.response?.status || err.message)); }
+        }
+
+        return (
+          <form onSubmit={submit}>
+            <label>Nombre del grupo<input value={name} onChange={e=>setName(e.target.value)} required/></label>
+            <label>Miembros (selecciona)</label>
+            <div style={{maxHeight:200,overflow:'auto',border:'1px solid #eee',padding:8}}>
+              {users.map(u => (
+                <label key={u.id} style={{display:'block'}}>
+                  <input type="checkbox" checked={selected.has(u.id)} onChange={()=>toggle(u.id)} /> {u.username} <span className="muted">({u.email||'sin-email'})</span>
+                </label>
+              ))}
+            </div>
+            <div style={{marginTop:8, display:'flex', gap:8}}>
+              <button type="submit">{editingGroup? 'Actualizar':'Crear grupo'}</button>
+              <div className="muted" style={{alignSelf:'center'}}>{status}</div>
+            </div>
+          </form>
+        )
+      }
+
+      // Registrations: user's registrations with download ticket
+      function RegistrationList(){
+        const [regs,setRegs] = useState([]);
+        const [loading,setLoading] = useState(true);
+        useEffect(()=>{ load(); },[]);
+        function load(){ setLoading(true); api.get('/api/registrations/').then(r=>{
+          const d = r.data; if(Array.isArray(d)) setRegs(d); else if(d && Array.isArray(d.results)) setRegs(d.results); else setRegs([]);
+        }).catch(()=>setRegs([])).finally(()=>setLoading(false)); }
+
+        async function downloadTicket(id, filename){
+          try{
+            const resp = await api.get('/api/registrations/' + id + '/download_ticket/', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(resp.data);
+            const a = document.createElement('a'); a.href = url; a.download = filename || ('ticket_'+id+'.pdf'); a.click(); window.URL.revokeObjectURL(url);
+          }catch(e){ alert('Error descargando ticket'); }
+        }
+
+        if(loading) return <div className="muted"><span className="spinner"></span> Cargando inscripciones...</div>
+        return (
+          <div>
+            {regs.length===0 ? <div className="muted">No tienes inscripciones.</div> : (
+              <ul>
+                {regs.map(r => (
+                  <li key={r.id}><strong>{r.event?.name || ('#'+r.id)}</strong> — Código: {r.entry_code} {' '}
+                    <button className="small" onClick={()=>downloadTicket(r.id)}>Descargar ticket</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )
+      }
+
+      // Group tokens management: list tokens, create token for user, download QR
+      function GroupTokens({ groupId }){
+        const [tokens,setTokens] = useState([]);
+        const [users,setUsers] = useState([]);
+        const [selectedUser,setSelectedUser] = useState('');
+        const [loading,setLoading] = useState(true);
+
+        useEffect(()=>{ if(!groupId) return; load(); api.get('/api/users/for_select/').then(r=>setUsers(r.data)).catch(()=>setUsers([])); },[groupId]);
+        function load(){ setLoading(true); api.get('/api/group-tokens/?group='+groupId).then(r=>{ const d=r.data; if(Array.isArray(d)) setTokens(d); else if(d && Array.isArray(d.results)) setTokens(d.results); else setTokens([]); }).catch(()=>setTokens([])).finally(()=>setLoading(false)); }
+
+        async function createToken(){ if(!selectedUser){ alert('Selecciona un usuario'); return };
+          try{ const res = await api.post('/api/group-tokens/', { group: groupId, user: selectedUser }); load(); }catch(e){ alert('Error creando token'); }
+        }
+
+        async function downloadQR(id){ try{ const resp = await api.get('/api/group-tokens/'+id+'/download_qr/', { responseType: 'blob' }); const url = window.URL.createObjectURL(resp.data); const a=document.createElement('a'); a.href=url; a.download='token_'+id+'.png'; a.click(); window.URL.revokeObjectURL(url); }catch(e){ alert('Error descargando QR'); } }
+
+        if(loading) return <div className="muted"><span className="spinner"></span> Cargando tokens...</div>
+        return (
+          <div>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <select value={selectedUser} onChange={e=>setSelectedUser(e.target.value)}>
+                <option value="">-- Selecciona usuario --</option>
+                {users.map(u=> <option key={u.id} value={u.id}>{u.username} ({u.email||'sin-email'})</option>)}
+              </select>
+              <button onClick={createToken}>Crear token</button>
+            </div>
+            <div style={{marginTop:8}}>
+              {tokens.length===0 ? <div className="muted">No hay tokens para este grupo.</div> : (
+                <ul>
+                  {tokens.map(t=> (
+                    <li key={t.id}>{t.user || t.user_display || t.user_id} — {t.token} {' '}<button className="small" onClick={()=>downloadQR(t.id)}>QR</button></li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    
+    // Global error handlers to surface errors in the page for debugging
+    function showGlobalError(msg){
+      try{
+        const root = document.getElementById('root');
+        const el = document.createElement('div');
+        el.style.background = '#fee';
+        el.style.color = '#900';
+        el.style.padding = '12px';
+        el.style.border = '1px solid #f99';
+        el.style.margin = '12px 0';
+        el.textContent = 'Frontend error: ' + msg;
+        if(root) root.prepend(el);
+        console.error('Frontend error:', msg);
+      }catch(e){ console.error('Error showing global error', e); }
+    }
+
+    window.addEventListener('error', function(ev){
+      showGlobalError(ev.message || String(ev));
+    });
+    window.addEventListener('unhandledrejection', function(ev){
+      const reason = ev.reason ? (ev.reason.message || JSON.stringify(ev.reason)) : String(ev);
+      showGlobalError('Unhandled promise rejection: ' + reason);
+    });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Mis Entradas</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; }
+      .ticket { border: 1px solid #ddd; padding: 12px; margin-bottom: 12px; }
+      .actions { margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Mis Entradas</h1>
+    {% if registrations %}
+      {% for reg in registrations %}
+        <div class="ticket">
+          <strong>{{ reg.event.name }}</strong><br />
+          Fecha: {{ reg.event.date }}<br />
+          Lugar: {{ reg.event.location }}<br />
+          Código: {{ reg.entry_code }}<br />
+          <div class="actions">
+            <a href="/api/registrations/{{ reg.id }}/download_ticket/">Descargar/Imprimir</a>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No tienes inscripciones todavía.</p>
+    {% endif %}
+  </body>
+  </html>
