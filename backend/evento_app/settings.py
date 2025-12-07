@@ -12,6 +12,9 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-REEMPLAZA-ESTO-POR-UNA-CLA
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
