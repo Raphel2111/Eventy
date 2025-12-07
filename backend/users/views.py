@@ -76,6 +76,26 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(qs, many=True)
         return Response(serializer.data)
     
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny], url_path='make-superuser')
+    def make_superuser(self, request):
+        """Temporary endpoint to make a user superuser - REMOVE AFTER USE"""
+        username = request.data.get('username')
+        secret = request.data.get('secret')
+        
+        # Simple secret protection
+        if secret != 'EventoApp2024Admin':
+            return Response({'detail': 'Invalid secret'}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            user = User.objects.get(username=username)
+            user.is_superuser = True
+            user.is_staff = True
+            user.email_verified = True
+            user.save()
+            return Response({'detail': f'User {username} is now superuser'})
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny], url_path='register')
     def register(self, request):
         """Public endpoint for user registration."""
