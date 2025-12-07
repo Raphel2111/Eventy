@@ -15,6 +15,9 @@ def auto_verify_email(backend, user, response, *args, **kwargs):
     Since the OAuth provider (Google/Facebook) has already verified the email,
     we can trust it and mark the user as verified.
     """
+    logger.info(f"OAuth Pipeline - User: {user.username if user else 'None'}, Email: {user.email if user else 'None'}, ID: {user.id if user else 'None'}")
+    logger.info(f"OAuth Response: {response}")
+    
     if user and not user.email_verified:
         user.email_verified = True
         user.save(update_fields=['email_verified'])
