@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BACKEND_BASE = 'http://localhost:8000';
+// Use environment variable for backend URL, fallback to localhost for development
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 const API_BASE = BACKEND_BASE + '/api/';
 
 const instance = axios.create({
