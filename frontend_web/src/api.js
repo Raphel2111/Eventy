@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use environment variable for backend URL, fallback to localhost for development
-const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+// Use environment variable for backend URL, fallback to production URL
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || 'https://eventoapp-backend.onrender.com';
 const API_BASE = BACKEND_BASE + '/api/';
 
 const instance = axios.create({
