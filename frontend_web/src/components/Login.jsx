@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from '../api';
+import { backendBase } from '../api';
 
 export default function Login({ onLogin, onShowRegister }){
     const [username, setUsername] = useState('');
@@ -11,7 +12,7 @@ export default function Login({ onLogin, onShowRegister }){
         setError(null);
         try{
             console.log('Intentando login con:', { username, password });
-            const res = await axios.post('http://localhost:8000/api/token/', { username, password });
+            const res = await axios.post(backendBase + '/api/token/', { username, password });
             console.log('Login exitoso, tokens recibidos');
             localStorage.setItem('access_token', res.data.access);
             localStorage.setItem('refresh_token', res.data.refresh);
@@ -28,7 +29,7 @@ export default function Login({ onLogin, onShowRegister }){
             } else if (err.response?.data?.username) {
                 setError(Array.isArray(err.response.data.username) ? err.response.data.username[0] : err.response.data.username);
             } else if (err.response?.status === 0) {
-                setError('No se puede conectar al servidor. ¿Está Django corriendo en http://localhost:8000?');
+                setError('No se puede conectar al servidor backend.');
             } else {
                 setError(err.response?.data?.message || 'Error al iniciar sesión: ' + err.message);
             }
@@ -37,7 +38,7 @@ export default function Login({ onLogin, onShowRegister }){
 
     const handleOAuthLogin = (provider) => {
         // Redirect to backend OAuth URL
-        window.location.href = `http://localhost:8000/auth/login/${provider}/`;
+        window.location.href = `${backendBase}/auth/login/${provider}/`;
     };
 
     const logout = () => {
