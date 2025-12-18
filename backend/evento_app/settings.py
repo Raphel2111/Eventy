@@ -35,9 +35,9 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',  # Desactivado temporalmente
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'users.middleware.EmailVerificationMiddleware',
+    # 'users.middleware.EmailVerificationMiddleware',  # Desactivado temporalmente
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -232,15 +232,8 @@ if DEBUG:
     CSRF_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_SECURE = False
 else:
-    # In production, allow specific origins
-    CORS_ALLOWED_ORIGINS = [
-        'https://eventoapp-sigma.vercel.app',
-        'https://eventoapp-backend.onrender.com',
-    ]
-    # Also allow any Vercel preview deployments
-    CORS_ALLOWED_ORIGIN_REGEXES = [
-        r"^https://.*\.vercel\.app$",
-    ]
+    # In production, allow all origins temporarily for testing
+    CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOW_CREDENTIALS = True
     # Allow all methods and headers for API
     CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
@@ -249,16 +242,13 @@ else:
 # Frontend URL for generating invitation links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
-# Security settings for production - More permissive for API access
+# Security settings for production - Permissive for API access
 if not DEBUG:
     SECURE_SSL_REDIRECT = False  # Render handles SSL
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = False  # More permissive for testing
+    CSRF_COOKIE_SECURE = False
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
-    # Allow CSRF for API endpoints
-    CSRF_TRUSTED_ORIGINS = [
-        'https://eventoapp-sigma.vercel.app',
-        'https://eventoapp-backend.onrender.com',
-    ]
+    X_FRAME_OPTIONS = 'SAMEORIGIN'  # Allow embedding
+    # Allow CSRF from anywhere temporarily
+    CSRF_TRUSTED_ORIGINS = ['https://*']
