@@ -232,22 +232,33 @@ if DEBUG:
     CSRF_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_SECURE = False
 else:
-    # In production, use FRONTEND_URL for CORS
-    frontend_url = os.getenv('FRONTEND_URL', '')
-    if frontend_url:
-        CORS_ALLOWED_ORIGINS = [frontend_url]
-    else:
-        CORS_ALLOW_ALL_ORIGINS = True  # Fallback for initial deployment
+    # In production, allow specific origins
+    CORS_ALLOWED_ORIGINS = [
+        'https://eventoapp-sigma.vercel.app',
+        'https://eventoapp-backend.onrender.com',
+    ]
+    # Also allow any Vercel preview deployments
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^https://.*\.vercel\.app$",
+    ]
     CORS_ALLOW_CREDENTIALS = True
+    # Allow all methods and headers for API
+    CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
+    CORS_ALLOW_HEADERS = ['*']
 
 # Frontend URL for generating invitation links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
-# Security settings for production
+# Security settings for production - More permissive for API access
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = False  # Render handles SSL
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+    # Allow CSRF for API endpoints
+    CSRF_TRUSTED_ORIGINS = [
+        'https://eventoapp-sigma.vercel.app',
+        'https://eventoapp-backend.onrender.com',
+    ]
