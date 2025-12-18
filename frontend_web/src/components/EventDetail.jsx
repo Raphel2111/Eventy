@@ -53,14 +53,27 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
             return;
         }
 
+        // Advertencia de precio si el evento es de pago
+        if (event.price && parseFloat(event.price) > 0) {
+            const confirmPayment = window.confirm(
+                `Este evento tiene un costo de $${parseFloat(event.price).toFixed(2)}. ` +
+                `Se deducirá de tu billetera. ¿Deseas continuar?`
+            );
+            if (!confirmPayment) return;
+        }
+
         axios.post('/registrations/', { event: eventId, user: currentUser.id })
             .then(res => {
                 setRegistrations(prev => [res.data, ...prev]);
-                alert('Registro creado exitosamente. Revisa tu correo para el ticket.');
+                const message = event.price && parseFloat(event.price) > 0 
+                    ? `Registro completado. Pago de $${parseFloat(event.price).toFixed(2)} realizado. Revisa tu correo para el ticket.`
+                    : 'Registro creado exitosamente. Revisa tu correo para el ticket.';
+                alert(message);
             })
             .catch(err => {
                 console.error('Error creating registration:', err.response?.data || err.message);
-                alert('Error al crear registro: ' + (err.response?.data?.detail || JSON.stringify(err.response?.data) || err.message));
+                const errorMsg = err.response?.data?.detail || JSON.stringify(err.response?.data) || err.message;
+                alert('Error al crear registro: ' + errorMsg);
             });
     }
 
@@ -204,6 +217,12 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
                 </div>
                 <div>
                     <strong>Límite de QR por persona:</strong> {qrLimit}
+                </div>
+                <div>
+                    <strong>Precio:</strong> {event.price && parseFloat(event.price) > 0 ? `$${parseFloat(event.price).toFixed(2)}` : 'GRATIS'}
+                </div>
+                <div>
+                    <strong>Visibilidad:</strong> {event.is_public ? '🌍 Público' : '🔒 Privado (solo miembros del grupo)'}
                 </div>
                 
                 {/* Mostrar admins del evento */}

@@ -58,24 +58,131 @@ export default function GroupForm({ groupId, onSaved }){
     }
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:'20px'}}>
             <div>
-                <label>Nombre</label>
-                <input value={name} onChange={e=>setName(e.target.value)} required />
+                <label className="group-form-label">
+                    📝 Nombre del Grupo *
+                </label>
+                <input 
+                    className="group-form-input"
+                    value={name} 
+                    onChange={e=>setName(e.target.value)} 
+                    required 
+                    placeholder="Ej: Equipo Marketing 2025"
+                />
             </div>
+            
             <div>
-                <label>Miembros</label>
-                <Select isMulti options={allUsers} value={members} onChange={setMembers} />
+                <label className="group-form-label">
+                    👥 Miembros
+                </label>
+                <Select 
+                    isMulti 
+                    options={allUsers} 
+                    value={members} 
+                    onChange={setMembers}
+                    placeholder="Selecciona usuarios para el grupo..."
+                    styles={{
+                        control: (base) => ({
+                            ...base,
+                            padding: '4px',
+                            borderRadius: '10px',
+                            border: '2px solid #e2e8f0',
+                            fontSize: '14px',
+                            '&:hover': { borderColor: '#cbd5e1' }
+                        }),
+                        multiValue: (base) => ({
+                            ...base,
+                            backgroundColor: '#dbeafe',
+                            borderRadius: '6px'
+                        }),
+                        multiValueLabel: (base) => ({
+                            ...base,
+                            color: '#1e40af',
+                            fontWeight: '500'
+                        })
+                    }}
+                />
+                <small className="group-form-help">
+                    Los miembros podrán ver los eventos del grupo
+                </small>
             </div>
+            
             <div>
-                <label>Admins del grupo</label>
-                <Select isMulti options={allUsers} value={admins} onChange={setAdmins} />
+                <label className="group-form-label">
+                    👑 Administradores
+                </label>
+                <Select 
+                    isMulti 
+                    options={allUsers} 
+                    value={admins} 
+                    onChange={setAdmins}
+                    placeholder="Selecciona administradores..."
+                    styles={{
+                        control: (base) => ({
+                            ...base,
+                            padding: '4px',
+                            borderRadius: '10px',
+                            border: '2px solid #e2e8f0',
+                            fontSize: '14px',
+                            '&:hover': { borderColor: '#cbd5e1' }
+                        }),
+                        multiValue: (base) => ({
+                            ...base,
+                            backgroundColor: '#fef3c7',
+                            borderRadius: '6px'
+                        }),
+                        multiValueLabel: (base) => ({
+                            ...base,
+                            color: '#92400e',
+                            fontWeight: '500'
+                        })
+                    }}
+                />
+                <small className="group-form-help">
+                    Los administradores pueden gestionar miembros y eventos
+                </small>
             </div>
+            
             <div>
-                <label>Eventos asociados</label>
-                <Select isMulti options={allEvents} value={events} onChange={setEvents} />
+                <label className="group-form-label">
+                    🎫 Eventos Asociados
+                </label>
+                <Select 
+                    isMulti 
+                    options={allEvents} 
+                    value={events} 
+                    onChange={setEvents}
+                    placeholder="Asocia eventos al grupo..."
+                    styles={{
+                        control: (base) => ({
+                            ...base,
+                            padding: '4px',
+                            borderRadius: '10px',
+                            border: '2px solid #e2e8f0',
+                            fontSize: '14px',
+                            '&:hover': { borderColor: '#cbd5e1' }
+                        }),
+                        multiValue: (base) => ({
+                            ...base,
+                            backgroundColor: '#dcfce7',
+                            borderRadius: '6px'
+                        }),
+                        multiValueLabel: (base) => ({
+                            ...base,
+                            color: '#166534',
+                            fontWeight: '500'
+                        })
+                    }}
+                />
+                <small className="group-form-help">
+                    Vincula eventos existentes a este grupo
+                </small>
             </div>
-            <button type="submit">Guardar</button>
+            
+            <button type="submit" className="group-form-submit">
+                💾 {groupId ? 'Actualizar Grupo' : 'Crear Grupo'}
+            </button>
         </form>
     );
 }

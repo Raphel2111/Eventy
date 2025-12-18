@@ -24,6 +24,68 @@ class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
     permission_classes = [IsEventAdminOrReadOnly]
 
+    def get_queryset(self):
+        """
+        Filter events based on visibility:
+        - Public events (is_public=True): visible to everyone
+        - Private events (is_public=False): only visible to group members or event admins
+        """
+        queryset = Event.objects.all()
+        user = self.request.user
+        
+        # Apply search filter if provided
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                dj_models.Q(name__icontains=search) |
+                dj_models.Q(description__icontains=search) |
+                dj_models.Q(location__icontains=search)
+            )
+        
+        # Filter by visibility (public/private)
+        visibility = self.request.query_params.get('visibility', None)
+        if visibility == 'public':
+            queryset = queryset.filter(is_public=True)
+        elif visibility == 'private':
+            queryset = queryset.filter(is_public=False)
+        
+        # Filter by group
+        group_id = self.request.query_params.get('group', None)
+        if group_id:
+            queryset = queryset.filter(group_id=group_id)
+        
+        # Filter by date range
+        date_from = self.request.query_params.get('date_from', None)
+        date_to = self.request.query_params.get('date_to', None)
+        if date_from:
+            queryset = queryset.filter(date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(date__lte=date_to)
+        
+        # Filter by price
+        is_free = self.request.query_params.get('is_free', None)
+        if is_free == 'true':
+            queryset = queryset.filter(price=0)
+        
+        # Apply visibility rules for private events
+        if not user.is_authenticated:
+            # Anonymous users only see public events
+            queryset = queryset.filter(is_public=True)
+        elif not user.is_staff:
+            # Non-staff users see:
+            # 1. All public events
+            # 2. Private events where they are group members or event admins
+            public_events = dj_models.Q(is_public=True)
+            is_event_admin = dj_models.Q(admins=user)
+            is_group_member = dj_models.Q(group__members=user)
+            queryset = queryset.filter(public_events | is_event_admin | is_group_member).distinct()
+        
+        # Ordering
+        order_by = self.request.query_params.get('order_by', '-date')
+        queryset = queryset.order_by(order_by)
+        
+        return queryset
+
     def perform_create(self, serializer):
         # If the event belongs to a group, check permissions: only group admins/creators or staff can create.
         user = getattr(self.request, 'user', None)
@@ -711,6 +773,7 @@ class RegistrationViewSet(viewsets.ModelViewSet):
         
         # Check max_qr_codes limit before creating
         event_id = serializer.validated_data.get('event')
+        event = None
         if event_id:
             event = Event.objects.filter(pk=event_id.pk).first()
             if event and event.max_qr_codes:
@@ -719,8 +782,42 @@ class RegistrationViewSet(viewsets.ModelViewSet):
                     from rest_framework.exceptions import ValidationError
                     raise ValidationError({'detail': f'Límite de registros alcanzado. Este evento solo permite {event.max_qr_codes} registros/QR.'})
         
-        self.perform_create(serializer)
-        registration = serializer.instance
+        # Check if event has a price and process payment
+        user = request.user
+        if event and event.price > 0:
+            # Get or create user's wallet
+            wallet, created = Wallet.objects.get_or_create(user=user)
+            
+            # Check if user has sufficient balance
+            if wallet.balance < event.price:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({
+                    'detail': f'Saldo insuficiente. Necesitas {event.price} {wallet.currency} pero solo tienes {wallet.balance} {wallet.currency}.',
+                    'required': float(event.price),
+                    'available': float(wallet.balance)
+                })
+            
+            # Deduct payment from wallet
+            wallet.balance -= event.price
+            wallet.save()
+            
+            # Create registration
+            self.perform_create(serializer)
+            registration = serializer.instance
+            
+            # Create transaction record
+            Transaction.objects.create(
+                wallet=wallet,
+                amount=-event.price,
+                transaction_type='payment',
+                description=f'Pago por entrada a {event.name}',
+                event=event,
+                balance_after=wallet.balance
+            )
+        else:
+            # Free event, just create registration
+            self.perform_create(serializer)
+            registration = serializer.instance
 
         # Generate PDF and send by email to the registrant if email is available
         try:
@@ -893,3 +990,85 @@ def ticket_list_view(request):
     if user.is_authenticated:
         regs = Registration.objects.filter(user=user)
     return render(request, 'events/ticket_list.html', {'registrations': regs, 'user': user})
+
+
+from .models import Wallet, Transaction
+from .serializers import WalletSerializer, TransactionSerializer
+from decimal import Decimal
+
+
+class WalletViewSet(viewsets.ModelViewSet):
+    serializer_class = WalletSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Wallet.objects.all()
+        return Wallet.objects.filter(user=user)
+    
+    @action(detail=False, methods=['get'], url_path='my_wallet')
+    def my_wallet(self, request):
+        """Get or create wallet for current user"""
+        wallet, created = Wallet.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(wallet)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'], url_path='add_funds')
+    def add_funds(self, request, pk=None):
+        """Add funds to wallet (deposit)"""
+        wallet = self.get_object()
+        if wallet.user != request.user and not request.user.is_staff:
+            return Response({'detail': 'No tienes permiso para agregar fondos a esta billetera'}, 
+                          status=status.HTTP_403_FORBIDDEN)
+        
+        amount = request.data.get('amount')
+        if not amount:
+            return Response({'detail': 'amount es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            amount = Decimal(str(amount))
+            if amount <= 0:
+                return Response({'detail': 'El monto debe ser mayor a 0'}, status=status.HTTP_400_BAD_REQUEST)
+        except (ValueError, TypeError):
+            return Response({'detail': 'Monto inválido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        wallet.balance += amount
+        wallet.save()
+        
+        # Create transaction record
+        Transaction.objects.create(
+            wallet=wallet,
+            amount=amount,
+            transaction_type='deposit',
+            description=request.data.get('description', 'Depósito de fondos'),
+            balance_after=wallet.balance
+        )
+        
+        return Response({
+            'detail': 'Fondos agregados exitosamente',
+            'new_balance': wallet.balance
+        })
+    
+    @action(detail=True, methods=['get'], url_path='transactions')
+    def transactions(self, request, pk=None):
+        """Get transaction history for wallet"""
+        wallet = self.get_object()
+        if wallet.user != request.user and not request.user.is_staff:
+            return Response({'detail': 'No tienes permiso para ver estas transacciones'}, 
+                          status=status.HTTP_403_FORBIDDEN)
+        
+        transactions = wallet.transactions.all()
+        serializer = TransactionSerializer(transactions, many=True)
+        return Response(serializer.data)
+
+
+class TransactionViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = TransactionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Transaction.objects.all()
+        return Transaction.objects.filter(wallet__user=user)

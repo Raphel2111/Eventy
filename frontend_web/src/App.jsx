@@ -5,6 +5,7 @@ import GroupList from './components/GroupList';
 import JoinGroup from './components/JoinGroup';
 import UserProfile from './components/UserProfile';
 import ProfileSettings from './components/ProfileSettings';
+import Wallet from './components/Wallet';
 import Login from './components/Login';
 import Register from './components/Register';
 import { fetchCurrentUser } from './auth';
@@ -123,6 +124,7 @@ function App(){
                             <>
                                 <button className="btn secondary" onClick={()=>setView('registrations')} style={{marginRight:0}}>✓ Mis Inscripciones</button>
                                 <button className="btn secondary" onClick={()=>setView('groups')} style={{marginRight:0}}>👥 Mis Grupos</button>
+                                <button className="btn secondary" onClick={()=>setView('wallet')} style={{marginRight:0}}>💰 Billetera</button>
                             </>
                         )}
                     </div>
@@ -255,6 +257,17 @@ function App(){
                     <div className="card" style={{textAlign:'center'}}>
                         <h2>Acceso restringido</h2>
                         <p>Debes iniciar sesión para ver tu perfil</p>
+                        <button className="btn" onClick={() => setView('events')}>Volver a Eventos</button>
+                    </div>
+                </div>
+            ) : null}
+            {view === 'wallet' && authenticated ? (
+                <ErrorBoundary><Wallet /></ErrorBoundary>
+            ) : view === 'wallet' ? (
+                <div className="container">
+                    <div className="card" style={{textAlign:'center'}}>
+                        <h2>Acceso restringido</h2>
+                        <p>Debes iniciar sesión para ver tu billetera</p>
                         <button className="btn" onClick={() => setView('events')}>Volver a Eventos</button>
                     </div>
                 </div>

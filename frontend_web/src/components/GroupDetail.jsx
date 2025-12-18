@@ -17,6 +17,8 @@ export default function GroupDetail({ groupId, onBack }) {
     const [newEventCapacity, setNewEventCapacity] = useState('');
     const [newEventMaxQR, setNewEventMaxQR] = useState('');
     const [newEventDescription, setNewEventDescription] = useState('');
+    const [newEventIsPublic, setNewEventIsPublic] = useState(true);
+    const [newEventPrice, setNewEventPrice] = useState('');
     const [viewingQREventId, setViewingQREventId] = useState(null);
     const [scanningQREventId, setScanningQREventId] = useState(null);
     const [invitations, setInvitations] = useState([]);
@@ -268,7 +270,9 @@ export default function GroupDetail({ groupId, onBack }) {
             capacity: newEventCapacity ? parseInt(newEventCapacity) : 100,
             max_qr_codes: newEventMaxQR ? parseInt(newEventMaxQR) : null,
             description: newEventDescription,
-            group: groupId
+            group: groupId,
+            is_public: newEventIsPublic,
+            price: newEventPrice ? parseFloat(newEventPrice) : 0.00
         };
 
         axios.post('/events/', payload)
@@ -280,6 +284,8 @@ export default function GroupDetail({ groupId, onBack }) {
                 setNewEventCapacity('');
                 setNewEventMaxQR('');
                 setNewEventDescription('');
+                setNewEventIsPublic(true);
+                setNewEventPrice('');
                 loadGroup();
             })
             .catch(err => {
@@ -414,6 +420,31 @@ export default function GroupDetail({ groupId, onBack }) {
                         <div className="form-row">
                             <label>Límite de QR/Tokens</label>
                             <input type="number" value={newEventMaxQR} onChange={e => setNewEventMaxQR(e.target.value)} placeholder="Dejar vacío para ilimitado" />
+                        </div>
+                        <div className="form-row">
+                            <label>Precio (USD)</label>
+                            <input 
+                                type="number" 
+                                step="0.01" 
+                                min="0" 
+                                value={newEventPrice} 
+                                onChange={e => setNewEventPrice(e.target.value)} 
+                                placeholder="0.00 = Gratis"
+                            />
+                        </div>
+                        <div className="form-row">
+                            <label style={{display:'flex',alignItems:'center',gap:'8px',cursor:'pointer'}}>
+                                <input 
+                                    type="checkbox" 
+                                    checked={newEventIsPublic}
+                                    onChange={e => setNewEventIsPublic(e.target.checked)}
+                                    style={{width:'16px',height:'16px',cursor:'pointer'}}
+                                />
+                                <span>Evento público (visible para todos)</span>
+                            </label>
+                            <small style={{color:'#64748b',marginTop:'4px',display:'block'}}>
+                                {newEventIsPublic ? 'El evento será visible para todos los usuarios' : 'El evento solo será visible para miembros del grupo'}
+                            </small>
                         </div>
                         <div className="form-row">
                             <label>Descripción</label>

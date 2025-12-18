@@ -4,7 +4,7 @@ from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework import routers
-from events.views import EventViewSet, RegistrationViewSet
+from events.views import EventViewSet, RegistrationViewSet, WalletViewSet, TransactionViewSet
 from events.views import DistributionGroupViewSet
 from events.views import GroupAccessTokenViewSet
 from users.views import UserViewSet, OAuthCallbackView
@@ -19,6 +19,8 @@ router.register(r'registrations', RegistrationViewSet, basename='registration')
 router.register(r'groups', DistributionGroupViewSet, basename='group')
 router.register(r'group-tokens', GroupAccessTokenViewSet, basename='groupaccesstoken')
 router.register(r'users', UserViewSet, basename='user')
+router.register(r'wallets', WalletViewSet, basename='wallet')
+router.register(r'transactions', TransactionViewSet, basename='transaction')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

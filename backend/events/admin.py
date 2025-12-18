@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Event, Registration, EmailLog, DistributionGroup
-from .models import GroupAccessToken, GroupInvitation
+from .models import GroupAccessToken, GroupInvitation, Wallet, Transaction
 
 
 @admin.register(Event)
@@ -50,3 +50,19 @@ class GroupInvitationAdmin(admin.ModelAdmin):
         return obj.is_valid()
     is_valid.boolean = True
     is_valid.short_description = 'Válida'
+
+
+@admin.register(Wallet)
+class WalletAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'balance', 'currency', 'created_at', 'updated_at')
+    list_filter = ('currency', 'created_at')
+    search_fields = ('user__username', 'user__email')
+    readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'wallet', 'transaction_type', 'amount', 'event', 'created_at', 'balance_after')
+    list_filter = ('transaction_type', 'created_at')
+    search_fields = ('wallet__user__username', 'description')
+    readonly_fields = ('created_at',)

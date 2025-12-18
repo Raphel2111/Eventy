@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Event, Registration, DistributionGroup, AccessRequest, GroupAccessRequest
+from .models import Event, Registration, DistributionGroup, AccessRequest, GroupAccessRequest, Wallet, Transaction
 from users.models import User
 from rest_framework import exceptions
 
@@ -22,7 +22,7 @@ class EventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Event
-        fields = ['id','name','description','date','location','capacity','max_qr_codes','admins','group','group_name','requires_approval']
+        fields = ['id','name','description','date','location','capacity','max_qr_codes','admins','group','group_name','requires_approval','is_public','price']
 
 class RegistrationSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -158,5 +158,23 @@ class GroupAccessRequestSerializer(serializers.ModelSerializer):
         model = GroupAccessRequest
         fields = ['id', 'user', 'group_id', 'group_name', 'status', 'message', 'requested_at', 'reviewed_at', 'reviewed_by', 'admin_notes']
         read_only_fields = ['status', 'requested_at', 'reviewed_at', 'reviewed_by', 'admin_notes']
+
+
+class WalletSerializer(serializers.ModelSerializer):
+    user_username = serializers.CharField(source='user.username', read_only=True)
+    
+    class Meta:
+        model = Wallet
+        fields = ['id', 'user', 'user_username', 'balance', 'currency', 'created_at', 'updated_at']
+        read_only_fields = ['balance', 'created_at', 'updated_at']
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    event_name = serializers.CharField(source='event.name', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = Transaction
+        fields = ['id', 'wallet', 'amount', 'transaction_type', 'description', 'event', 'event_name', 'created_at', 'balance_after']
+        read_only_fields = ['created_at', 'balance_after']
 
 
