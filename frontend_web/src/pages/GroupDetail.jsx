@@ -713,16 +713,34 @@ export default function GroupDetail({ groupId, onBack }) {
                                                 </div>
                                             </div>
                                             {inv.is_valid && (
-                                                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                                                    <button className="btn secondary" onClick={() => copyToClipboard(inv.url)}>
-                                                        📋 Copiar
-                                                    </button>
-                                                    <button className="btn" style={{ backgroundColor: '#25D366' }} onClick={() => shareWhatsApp(inv.url, group.name)}>
-                                                        WhatsApp
-                                                    </button>
-                                                    <button className="btn secondary" onClick={() => shareEmail(inv.url, group.name)}>
-                                                        📧 Email
-                                                    </button>
+                                                <div style={{ marginTop: 12 }}>
+                                                    {navigator.share ? (
+                                                        <button
+                                                            className="btn full"
+                                                            style={{ background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', border: 'none' }}
+                                                            onClick={() => {
+                                                                navigator.share({
+                                                                    title: `Únete al grupo "${group.name}"`,
+                                                                    text: `¡Hola! Te invito a unirte a mi grupo "${group.name}" en EventoApp.`,
+                                                                    url: inv.url
+                                                                }).catch(console.error);
+                                                            }}
+                                                        >
+                                                            📤 Compartir Invitación
+                                                        </button>
+                                                    ) : (
+                                                        <div style={{ display: 'flex', gap: 8 }}>
+                                                            <button className="btn secondary" onClick={() => copyToClipboard(inv.url)} style={{ flex: 1 }}>
+                                                                📋 Copiar
+                                                            </button>
+                                                            <button className="btn" style={{ backgroundColor: '#25D366', flex: 1, border: 'none' }} onClick={() => shareWhatsApp(inv.url, group.name)}>
+                                                                WhatsApp
+                                                            </button>
+                                                            <button className="btn secondary" onClick={() => shareEmail(inv.url, group.name)} style={{ flex: 1 }}>
+                                                                📧 Email
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
