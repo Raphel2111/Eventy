@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from '../api';
 import { backendBase } from '../api';
 
-export default function Login({ onLogin, onShowRegister }){
+export default function Login({ onLogin, onShowRegister }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
@@ -10,7 +10,7 @@ export default function Login({ onLogin, onShowRegister }){
     const submit = async (e) => {
         e.preventDefault();
         setError(null);
-        try{
+        try {
             console.log('Intentando login con:', { username, password });
             const res = await axios.post(backendBase + '/api/token/', { username, password });
             console.log('Login exitoso, tokens recibidos');
@@ -20,7 +20,7 @@ export default function Login({ onLogin, onShowRegister }){
             if (onLogin) {
                 onLogin();
             }
-        }catch(err){
+        } catch (err) {
             console.error('Login error:', err.response?.data || err.message);
             if (err.response?.status === 401) {
                 setError('Usuario o contraseña incorrectos');
@@ -50,20 +50,20 @@ export default function Login({ onLogin, onShowRegister }){
     const token = localStorage.getItem('access_token');
 
     if (token) return (
-        <div className="card" style={{display:'inline-block'}}>
+        <div className="card" style={{ display: 'inline-block' }}>
             <p>Autenticado</p>
-            <div style={{display:'flex',gap:8}}>
-                <button className="btn" onClick={()=>{ if (onLogin) onLogin(); }}>Refrescar</button>
+            <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn" onClick={() => { if (onLogin) onLogin(); }}>Refrescar</button>
                 <button className="btn secondary" onClick={logout}>Logout</button>
             </div>
         </div>
     );
 
     return (
-        <form className="card" onSubmit={submit} style={{maxWidth:420}}>
-            <h3 style={{marginTop:0}}>Iniciar sesión</h3>
-            
-            {/* OAuth Login Buttons */}
+        <form className="card" onSubmit={submit} style={{ maxWidth: 420 }}>
+            <h3 style={{ marginTop: 0 }}>Iniciar sesión</h3>
+
+            {/* OAuth Login Buttons
             <div style={{ marginBottom: 20 }}>
                 <button 
                     type="button" 
@@ -110,9 +110,10 @@ export default function Login({ onLogin, onShowRegister }){
                     Continuar con Facebook
                 </button>
             </div>
+            */}
 
-            <div style={{ 
-                textAlign: 'center', 
+            <div style={{
+                textAlign: 'center',
                 margin: '20px 0',
                 color: 'var(--muted)',
                 display: 'flex',
@@ -126,18 +127,18 @@ export default function Login({ onLogin, onShowRegister }){
 
             <div className="form-row">
                 <label>Usuario</label>
-                <input type="text" value={username} onChange={e=>setUsername(e.target.value)} />
+                <input type="text" value={username} onChange={e => setUsername(e.target.value)} />
             </div>
             <div className="form-row">
                 <label>Contraseña</label>
-                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
             </div>
-            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button className="btn" type="submit">Entrar</button>
-                <button type="button" className="btn secondary" onClick={()=>{ setUsername(''); setPassword(''); setError(null); }}>Limpiar</button>
+                <button type="button" className="btn secondary" onClick={() => { setUsername(''); setPassword(''); setError(null); }}>Limpiar</button>
             </div>
-            {error && <div style={{color:'var(--danger)',marginTop:10}}>{error}</div>}
-            
+            {error && <div style={{ color: 'var(--danger)', marginTop: 10 }}>{error}</div>}
+
             {onShowRegister && (
                 <div style={{ marginTop: 16, textAlign: 'center', paddingTop: 16, borderTop: '1px solid var(--muted)' }}>
                     <span className="muted">¿No tienes cuenta?</span>{' '}

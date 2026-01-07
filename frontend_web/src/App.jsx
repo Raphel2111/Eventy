@@ -22,6 +22,8 @@ function App() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Escuchar evento de email no verificado
+    // Escuchar evento de email no verificado
+    /*
     useEffect(() => {
         const handleEmailNotVerified = (event) => {
             setEmailNotVerifiedAlert(true);
@@ -31,14 +33,18 @@ function App() {
         window.addEventListener('email-not-verified', handleEmailNotVerified);
         return () => window.removeEventListener('email-not-verified', handleEmailNotVerified);
     }, []);
+    */
 
     // Verificar automáticamente al cargar usuario si no está verificado
+    // Verificar automáticamente al cargar usuario si no está verificado
+    /*
     useEffect(() => {
         if (currentUser && !currentUser.email_verified && authenticated) {
             setView('profile'); // Abrir automáticamente el perfil
             setEmailNotVerifiedAlert(true);
         }
     }, [currentUser, authenticated]);
+    */
 
     // Handle URL hash routing for invitations and OAuth
     useEffect(() => {
