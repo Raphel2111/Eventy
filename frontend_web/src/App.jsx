@@ -19,6 +19,7 @@ function App() {
     const [joinToken, setJoinToken] = useState(null);
     const [showRegister, setShowRegister] = useState(false);
     const [emailNotVerifiedAlert, setEmailNotVerifiedAlert] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Escuchar evento de email no verificado
     useEffect(() => {
@@ -117,72 +118,55 @@ function App() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             <nav>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '1200px', margin: '0 auto' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-                        <div className="brand" style={{ marginRight: 32, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div className="nav-container">
+                    <div className="nav-header">
+                        <div className="brand" onClick={() => setView('events')} style={{ cursor: 'pointer' }}>
                             <BrandLogo />
                             <span className="brand-text">EventoApp</span>
                         </div>
-                        <button className="btn secondary" onClick={() => setView('events')} style={{ marginRight: 0 }}>📅 Eventos</button>
+                        <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                            {mobileMenuOpen ? '✕' : '☰'}
+                        </button>
+                    </div>
+
+                    <div className={`nav-links ${mobileMenuOpen ? 'open' : ''}`}>
+                        <button className={`btn nav-item ${view === 'events' ? 'active' : ''}`} onClick={() => { setView('events'); setMobileMenuOpen(false); }}>📅 Eventos</button>
                         {authenticated && (
                             <>
-                                <button className="btn secondary" onClick={() => setView('registrations')} style={{ marginRight: 0 }}>✓ Mis Inscripciones</button>
-                                <button className="btn secondary" onClick={() => setView('groups')} style={{ marginRight: 0 }}>👥 Mis Grupos</button>
-                                <button className="btn secondary" onClick={() => setView('wallet')} style={{ marginRight: 0 }}>💰 Billetera</button>
+                                <button className={`btn nav-item ${view === 'registrations' ? 'active' : ''}`} onClick={() => { setView('registrations'); setMobileMenuOpen(false); }}>✓ Inscripciones</button>
+                                <button className={`btn nav-item ${view === 'groups' ? 'active' : ''}`} onClick={() => { setView('groups'); setMobileMenuOpen(false); }}>👥 Grupos</button>
+                                <button className={`btn nav-item ${view === 'wallet' ? 'active' : ''}`} onClick={() => { setView('wallet'); setMobileMenuOpen(false); }}>💰 Billetera</button>
                             </>
                         )}
-                    </div>
-                    <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        {currentUser ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }} onClick={() => setView('profile')} title="Ver perfil">
-                                    {currentUser.avatar_url ? (
-                                        <img
-                                            src={currentUser.avatar_url}
-                                            alt={currentUser.username}
-                                            style={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: '50%',
-                                                objectFit: 'cover',
-                                                border: '2px solid var(--primary)',
-                                                cursor: 'pointer'
-                                            }}
-                                        />
-                                    ) : (
-                                        <img
-                                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=random&size=40`}
-                                            alt={currentUser.username}
-                                            style={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: '50%',
-                                                border: '2px solid var(--muted)',
-                                                cursor: 'pointer'
-                                            }}
-                                        />
-                                    )}
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <div style={{ fontWeight: 600, fontSize: '14px' }}>{currentUser.username}</div>
-                                        <div className="muted" style={{ fontSize: '12px' }}>{currentUser.email}</div>
+
+                        <div className="nav-user-section">
+                            {currentUser ? (
+                                <div className="user-profile-widget">
+                                    <div className="user-info" onClick={() => { setView('profile'); setMobileMenuOpen(false); }}>
+                                        {currentUser.avatar_url ? (
+                                            <img src={currentUser.avatar_url} alt={currentUser.username} className="avatar-small" />
+                                        ) : (
+                                            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=random&size=40`} alt={currentUser.username} className="avatar-small" />
+                                        )}
+                                        <div className="user-details">
+                                            <span className="username">{currentUser.username}</span>
+                                            <span className="email">{currentUser.email}</span>
+                                        </div>
                                     </div>
+                                    <button className="btn logout-btn" onClick={() => { localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); setAuthenticated(false); setMobileMenuOpen(false); }}>
+                                        Salir
+                                    </button>
                                 </div>
-                                <button className="btn" onClick={() => { localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); setAuthenticated(false); }}>Logout</button>
-                            </div>
-                        ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                {!showRegister && (
-                                    <button className="btn" onClick={() => setShowRegister(true)}>
-                                        Crear cuenta
-                                    </button>
-                                )}
-                                {showRegister && (
-                                    <button className="btn secondary" onClick={() => setShowRegister(false)}>
-                                        Volver a login
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                            ) : (
+                                <div className="auth-buttons">
+                                    {!showRegister ? (
+                                        <button className="btn primary" onClick={() => { setShowRegister(true); setMobileMenuOpen(false); }}>Acceder</button>
+                                    ) : (
+                                        <button className="btn secondary" onClick={() => { setShowRegister(false); setMobileMenuOpen(false); }}>Login</button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </nav>
