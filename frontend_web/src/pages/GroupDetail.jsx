@@ -719,9 +719,10 @@ export default function GroupDetail({ groupId, onBack }) {
                                                             className="btn full"
                                                             style={{ background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', border: 'none' }}
                                                             onClick={() => {
+                                                                const shareText = `¡Hola! ${currentUser?.username || 'Alguien'} te invita a unirte al grupo "${group.name}" en EventoApp.`;
                                                                 navigator.share({
-                                                                    title: `Únete al grupo "${group.name}"`,
-                                                                    text: `¡Hola! Te invito a unirte a mi grupo "${group.name}" en EventoApp.`,
+                                                                    title: `Invitación de ${group.name}`,
+                                                                    text: shareText,
                                                                     url: inv.url
                                                                 }).catch(console.error);
                                                             }}
@@ -733,7 +734,15 @@ export default function GroupDetail({ groupId, onBack }) {
                                                             <button className="btn secondary" onClick={() => copyToClipboard(inv.url)} style={{ flex: 1 }}>
                                                                 📋 Copiar
                                                             </button>
-                                                            <button className="btn" style={{ backgroundColor: '#25D366', flex: 1, border: 'none' }} onClick={() => shareWhatsApp(inv.url, group.name)}>
+                                                            <button
+                                                                className="btn"
+                                                                style={{ backgroundColor: '#25D366', flex: 1, border: 'none' }}
+                                                                onClick={() => {
+                                                                    const message = `¡Hola! ${currentUser?.username || 'Alguien'} te invita a unirte al grupo "${group.name}" en EventoApp. ${inv.url}`;
+                                                                    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                                                                    window.open(whatsappUrl, '_blank');
+                                                                }}
+                                                            >
                                                                 WhatsApp
                                                             </button>
                                                             <button className="btn secondary" onClick={() => shareEmail(inv.url, group.name)} style={{ flex: 1 }}>
