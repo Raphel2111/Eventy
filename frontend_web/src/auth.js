@@ -20,7 +20,7 @@ export async function fetchCurrentUser(){
     const id = payload.user_id || payload.id || payload.sub;
     if (!id) return null;
     try{
-        const res = await api.get(`/users/${id}/`);
+        const res = await api.get(`users/${id}/`);
         return res.data;
     }catch(e){
         return null;

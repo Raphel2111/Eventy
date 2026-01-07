@@ -31,7 +31,7 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
 
     function loadUser() {
         setLoading(true);
-        axios.get(`/users/${userId}/`)
+        axios.get(`users/${userId}/`)
             .then(res => {
                 setUser(res.data);
                 setFormData({
@@ -78,7 +78,7 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
             formDataToSend.append('avatar', avatarFile);
         }
 
-        axios.patch(`/users/${userId}/`, formDataToSend, {
+        axios.patch(`users/${userId}/`, formDataToSend, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }

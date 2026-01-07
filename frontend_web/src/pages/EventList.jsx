@@ -22,7 +22,7 @@ export default function EventList(){
     useEffect(() => {
         fetchCurrentUser().then(u => setCurrentUser(u));
         // Cargar grupos disponibles para el filtro
-        axios.get('/groups/')
+        axios.get('groups/')
             .then(res => {
                 const payload = res.data;
                 const items = Array.isArray(payload) ? payload : (payload.results || []);
@@ -44,7 +44,7 @@ export default function EventList(){
         if (orderBy) params.order_by = orderBy;
         if (selectedGroup) params.group = selectedGroup;
         
-        axios.get('/events/', { params })
+        axios.get('events/', { params })
             .then(res=>{
                 const payload = res.data;
                 const items = Array.isArray(payload) ? payload : (payload.results || []);
@@ -59,7 +59,7 @@ export default function EventList(){
             return;
         }
         
-        axios.delete(`/events/${eventId}/`)
+        axios.delete(`events/${eventId}/`)
             .then(() => {
                 setEvents(prev => prev.filter(e => e.id !== eventId));
                 alert('Evento eliminado correctamente.');

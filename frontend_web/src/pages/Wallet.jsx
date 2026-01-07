@@ -16,11 +16,11 @@ export default function Wallet() {
 
     function loadWallet() {
         setLoading(true);
-        axios.get('/wallets/my_wallet/')
+        axios.get('wallets/my_wallet/')
             .then(res => {
                 setWallet(res.data);
                 // Cargar transacciones
-                return axios.get(`/wallets/${res.data.id}/transactions/`);
+                return axios.get(`wallets/${res.data.id}/transactions/`);
             })
             .then(res => {
                 setTransactions(res.data);
@@ -40,7 +40,7 @@ export default function Wallet() {
         }
 
         setProcessing(true);
-        axios.post(`/wallets/${wallet.id}/add_funds/`, {
+        axios.post(`wallets/${wallet.id}/add_funds/`, {
             amount: parseFloat(amount),
             description: description || 'Depósito de fondos'
         })

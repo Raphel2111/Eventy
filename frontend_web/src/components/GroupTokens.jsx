@@ -12,7 +12,7 @@ export default function GroupTokens({ groupId }){
 
     useEffect(()=>{
         if(!groupId) return;
-        axios.get(`/group-tokens/?group=${groupId}`).then(res=>{
+        axios.get(`group-tokens/?group=${groupId}`).then(res=>{
             const payload = res.data;
             const items = Array.isArray(payload) ? payload : (payload.results || []);
             setTokens(items);
@@ -24,7 +24,7 @@ export default function GroupTokens({ groupId }){
             alert('No se pudo obtener el usuario actual');
             return;
         }
-        axios.post('/group-tokens/', { group: groupId, user: currentUser.id }).then(res=>{
+        axios.post('group-tokens/', { group: groupId, user: currentUser.id }).then(res=>{
             setTokens(prev=>[res.data, ...prev]);
         }).catch(err=>{
             console.error('Error creating token:', err.response?.data || err.message);

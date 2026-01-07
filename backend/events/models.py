@@ -2,9 +2,7 @@ from django.db import models
 from users.models import User
 from django.utils import timezone
 import uuid
-import qrcode
-from io import BytesIO
-from django.core.files import File
+from evento_app.utils import generate_qr_code
 
 class Event(models.Model):
     name = models.CharField(max_length=200)
@@ -57,15 +55,9 @@ class Registration(models.Model):
     def save(self, *args, **kwargs):
         # Only generate and save a QR code if one isn't already present.
         if not self.qr_code:
-            try:
-                qr_img = qrcode.make(str(self.entry_code))
-                canvas = BytesIO()
-                qr_img.save(canvas, format='PNG')
-                canvas.seek(0)
-                self.qr_code.save(f'{self.entry_code}.png', File(canvas), save=False)
-            except Exception:
-                # If QR generation fails, proceed without blocking save.
-                pass
+            filename, file_obj = generate_qr_code(self.entry_code)
+            if filename and file_obj:
+                self.qr_code.save(filename, file_obj, save=False)
         super().save(*args, **kwargs)
 
 
@@ -89,8 +81,12 @@ class DistributionGroup(models.Model):
     - `members`: users that belong to this distribution group
     - `events`: events associated to this group (tickets distributed to these events)
     - `admins`: users who can manage the group
+    - `is_public`: if True, anyone can join; if False, requires approval
     """
     name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, help_text='Descripción del grupo')
+    logo = models.ImageField(upload_to='group_logos/', blank=True, null=True, help_text='Logo o imagen del grupo')
+    is_public = models.BooleanField(default=False, help_text='Si es público, cualquiera puede unirse. Si es privado, requiere aprobación.')
     members = models.ManyToManyField(User, related_name='distribution_groups', blank=True)
     events = models.ManyToManyField(Event, related_name='distribution_groups', blank=True)
     admins = models.ManyToManyField(User, related_name='managed_distribution_groups', blank=True)
@@ -122,17 +118,9 @@ class GroupAccessToken(models.Model):
             import uuid
             self.token = uuid.uuid4().hex
         if not self.qr_code:
-            try:
-                import qrcode
-                from io import BytesIO
-                from django.core.files import File
-                img = qrcode.make(self.token)
-                buf = BytesIO()
-                img.save(buf, format='PNG')
-                buf.seek(0)
-                self.qr_code.save(f'{self.token}.png', File(buf), save=False)
-            except Exception:
-                pass
+            filename, file_obj = generate_qr_code(self.token)
+            if filename and file_obj:
+                self.qr_code.save(filename, file_obj, save=False)
         super().save(*args, **kwargs)
 
     def __str__(self):

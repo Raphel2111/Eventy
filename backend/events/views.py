@@ -4,8 +4,9 @@ from rest_framework.decorators import action
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, send_mail
 from django.conf import settings
+from django.utils import timezone
 from io import BytesIO
 from django.db import models as dj_models
 import logging
@@ -356,10 +357,8 @@ class DistributionGroupViewSet(viewsets.ModelViewSet):
         return DistributionGroupSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        if user.is_staff:
-            return DistributionGroup.objects.all()
-        return DistributionGroup.objects.filter(dj_models.Q(members=user) | dj_models.Q(admins=user)).distinct()
+        # Mostrar TODOS los grupos para permitir que los usuarios los descubran
+        return DistributionGroup.objects.all()
 
     def perform_create(self, serializer):
         group = serializer.save()
@@ -452,6 +451,63 @@ class DistributionGroupViewSet(viewsets.ModelViewSet):
         group.admins.remove(u)
         return Response({'detail': 'admin removed'})
 
+    @action(detail=True, methods=['post'], url_path='join', permission_classes=[permissions.IsAuthenticated])
+    def join_group(self, request, pk=None):
+        """Join a group (public groups) or request access (private groups)"""
+        group = self.get_object()
+        user = request.user
+        
+        # Check if user is already a member
+        if group.members.filter(pk=user.pk).exists():
+            return Response({'detail': 'Already a member'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # If group is public, add user immediately
+        if group.is_public:
+            group.members.add(user)
+            return Response({'detail': 'Successfully joined the group', 'is_member': True})
+        else:
+            # For private groups, create an access request
+            existing_request = GroupAccessRequest.objects.filter(user=user, group=group, status='pending').first()
+            if existing_request:
+                return Response({'detail': 'Ya tienes una solicitud pendiente para este grupo'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            access_request = GroupAccessRequest.objects.create(
+                user=user,
+                group=group,
+                message=f'Solicitud de acceso al grupo {group.name}'
+            )
+            
+            # Send email to group admins
+            admin_emails = [admin.email for admin in group.admins.all() if admin.email]
+            if admin_emails:
+                subject = f'Nueva solicitud de acceso al grupo {group.name}'
+                body = f'{user.username} ({user.email}) ha solicitado acceso al grupo "{group.name}".'
+                try:
+                    from django.core.mail import send_mail
+                    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, admin_emails, fail_silently=True)
+                except Exception as e:
+                    logger.error(f'Error sending email: {str(e)}')
+            
+            return Response({
+                'detail': 'Access request sent to group admins',
+                'is_member': False,
+                'pending': True
+            })
+    
+    @action(detail=True, methods=['post'], url_path='leave', permission_classes=[permissions.IsAuthenticated])
+    def leave_group(self, request, pk=None):
+        """Leave a group"""
+        group = self.get_object()
+        user = request.user
+        
+        # Check if user is a member
+        if not group.members.filter(pk=user.pk).exists():
+            return Response({'detail': 'Not a member'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Remove user from group
+        group.members.remove(user)
+        return Response({'detail': 'Successfully left the group'})
+    
     @action(detail=True, methods=['post'], url_path='create_invitation')
     def create_invitation(self, request, pk=None):
         """Create a shareable invitation link for the group"""
@@ -591,8 +647,9 @@ class DistributionGroupViewSet(viewsets.ModelViewSet):
         if existing_request:
             return Response({'detail': 'Ya tienes una solicitud pendiente para este grupo'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create access request
-        message = request.data.get('message', '')
+        # Create access request (limit message to 300 chars)
+        raw_message = request.data.get('message', '') or ''
+        message = raw_message[:300]
         access_request = GroupAccessRequest.objects.create(
             user=user,
             group=group,
@@ -621,7 +678,7 @@ class DistributionGroupViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 logger.error(f'Error sending access request email: {e}')
         
-        serializer = GroupAccessRequestSerializer(access_request)
+        serializer = GroupAccessRequestSerializer(access_request, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['get'], url_path='access_requests')
@@ -635,7 +692,7 @@ class DistributionGroupViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Solo los administradores pueden ver las solicitudes'}, status=status.HTTP_403_FORBIDDEN)
         
         requests = group.access_requests.all()
-        serializer = GroupAccessRequestSerializer(requests, many=True)
+        serializer = GroupAccessRequestSerializer(requests, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'], url_path='approve_access')
@@ -678,7 +735,7 @@ class DistributionGroupViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 logger.error(f'Error sending approval email: {e}')
         
-        serializer = GroupAccessRequestSerializer(access_request)
+        serializer = GroupAccessRequestSerializer(access_request, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'], url_path='reject_access')
@@ -724,7 +781,7 @@ class DistributionGroupViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 logger.error(f'Error sending rejection email: {e}')
         
-        serializer = GroupAccessRequestSerializer(access_request)
+        serializer = GroupAccessRequestSerializer(access_request, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'], url_path='remove_creator')

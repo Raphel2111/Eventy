@@ -9,7 +9,9 @@ class IsEventAdminOrReadOnly(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        # Allow authenticated users to list and create; detailed checks in has_object_permission
+        # Allow unauthenticated read-only access; require auth for modifications
+        if request.method in permissions.SAFE_METHODS:
+            return True
         return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
@@ -54,7 +56,9 @@ class IsGroupOrEventAdmin(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        # allow authenticated users to read/list and create
+        # Allow unauthenticated read-only access; require auth for create/update/delete
+        if request.method in permissions.SAFE_METHODS:
+            return True
         return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
@@ -81,6 +85,8 @@ class IsGroupAdminOrCreatorOrEventAdmin(permissions.BasePermission):
     """Allow modifications when the user is group admin, group creator, event admin, or staff."""
 
     def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
         return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):

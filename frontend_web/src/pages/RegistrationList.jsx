@@ -7,7 +7,7 @@ export default function RegistrationList() {
 
     useEffect(() => {
         setLoading(true);
-        axios.get('/registrations/')
+        axios.get('registrations/')
             .then(res => {
                 const payload = res.data;
                 const items = Array.isArray(payload) ? payload : (payload.results || []);
@@ -22,7 +22,7 @@ export default function RegistrationList() {
             return;
         }
         
-        axios.delete(`/registrations/${regId}/`)
+        axios.delete(`registrations/${regId}/`)
             .then(() => {
                 setRegs(prev => prev.filter(r => r.id !== regId));
                 alert('Inscripción eliminada correctamente.');

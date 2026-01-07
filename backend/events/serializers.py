@@ -4,9 +4,19 @@ from users.models import User
 from rest_framework import exceptions
 
 class UserSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role']
+        fields = ['id', 'username', 'email', 'role', 'avatar', 'avatar_url']
+    
+    def get_avatar_url(self, obj):
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
 
 
 class ForSelectUserSerializer(serializers.ModelSerializer):
@@ -55,9 +65,21 @@ from .models import DistributionGroup, Event
 
 
 class DistributionGroupSerializer(serializers.ModelSerializer):
+    member_count = serializers.SerializerMethodField()
+    is_member = serializers.SerializerMethodField()
+    
     class Meta:
         model = DistributionGroup
-        fields = ['id', 'name', 'members', 'events', 'admins', 'creators']
+        fields = ['id', 'name', 'description', 'logo', 'is_public', 'members', 'events', 'admins', 'creators', 'member_count', 'is_member']
+    
+    def get_member_count(self, obj):
+        return obj.members.count()
+    
+    def get_is_member(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.members.filter(id=request.user.id).exists()
+        return False
     
     def to_representation(self, instance):
         # For GET: return lists of IDs
@@ -74,7 +96,12 @@ class DistributionGroupSerializer(serializers.ModelSerializer):
         creators_in = validated_data.pop('creators', [])
         events_in = validated_data.pop('events', [])
 
-        group = DistributionGroup.objects.create(name=validated_data.get('name', ''))
+        group = DistributionGroup.objects.create(
+            name=validated_data.get('name', ''),
+            description=validated_data.get('description', ''),
+            logo=validated_data.get('logo'),
+            is_public=validated_data.get('is_public', False)
+        )
 
         # Members/admins/creators: accept list of user IDs
         if members_in:

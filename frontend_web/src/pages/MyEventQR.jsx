@@ -21,9 +21,9 @@ export default function MyEventQR({ eventId, onBack }) {
         setLoading(true);
         
         Promise.all([
-            axios.get(`/events/${eventId}/`),
-            // Solo cargar MIS registros para este evento
-            axios.get(`/registrations/?event=${eventId}&user=${currentUser.id}`)
+                axios.get(`events/${eventId}/`),
+                // Solo cargar MIS registros para este evento
+                axios.get(`registrations/?event=${eventId}&user=${currentUser.id}`)
         ])
         .then(([eventRes, regsRes]) => {
             setEvent(eventRes.data);
@@ -44,7 +44,7 @@ export default function MyEventQR({ eventId, onBack }) {
             return;
         }
 
-        axios.post('/registrations/', { event: eventId, user: currentUser.id })
+            axios.post('registrations/', { event: eventId, user: currentUser.id })
             .then(res => {
                 setMyRegistration(res.data);
                 alert('Tu QR ha sido generado exitosamente.');

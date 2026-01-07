@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use environment variable for backend URL, fallback to production URL
-const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || 'https://eventoapp-backend.onrender.com';
+// Use environment variable for backend URL
+const BACKEND_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const API_BASE = BACKEND_BASE + '/api/';
 
 const instance = axios.create({
@@ -32,7 +32,7 @@ function addRefreshSubscriber(cb) {
 
 instance.interceptors.response.use(undefined, async (error) => {
     const originalRequest = error.config;
-    
+
     // Manejar error de email no verificado
     if (error.response && error.response.status === 403) {
         const data = error.response.data;
@@ -42,7 +42,7 @@ instance.interceptors.response.use(undefined, async (error) => {
             return Promise.reject(error);
         }
     }
-    
+
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
         const refreshToken = localStorage.getItem('refresh_token');
@@ -79,7 +79,7 @@ instance.interceptors.response.use(undefined, async (error) => {
     return Promise.reject(error);
 });
 
-export function getBackendUrl(path){
+export function getBackendUrl(path) {
     if (!path) return API_BASE;
     if (path.startsWith('/')) return BACKEND_BASE + path;
     return API_BASE + path;

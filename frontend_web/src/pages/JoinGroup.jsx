@@ -23,7 +23,7 @@ export default function JoinGroup({ token, onSuccess, onCancel }) {
         setError('');
         
         // Public endpoint to get invitation info
-        axios.get(`/groups/invitation-info/${token}/`)
+        axios.get(`groups/invitation-info/${token}/`)
             .then(res => {
                 setInvitationInfo(res.data);
             })
@@ -42,7 +42,7 @@ export default function JoinGroup({ token, onSuccess, onCancel }) {
         setJoining(true);
         setError('');
 
-        axios.post('/groups/accept_invitation/', { token })
+        axios.post('groups/accept_invitation/', { token })
             .then(res => {
                 alert(res.data.detail || 'Te has unido al grupo exitosamente');
                 if (onSuccess) {

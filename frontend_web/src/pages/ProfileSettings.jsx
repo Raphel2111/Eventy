@@ -29,7 +29,7 @@ export default function ProfileSettings({ onBack, showAlert = false }) {
 
     function sendEmailVerification() {
         setSendingEmailCode(true);
-        axios.post('/users/send-email-verification/')
+        axios.post('users/send-email-verification/')
             .then(res => {
                 alert('Código enviado a tu email. Revisa tu bandeja de entrada.');
                 setShowEmailVerification(true);
@@ -47,7 +47,7 @@ export default function ProfileSettings({ onBack, showAlert = false }) {
         }
 
         setVerifyingEmail(true);
-        axios.post('/users/verify-email/', { code: emailCode })
+        axios.post('users/verify-email/', { code: emailCode })
             .then(res => {
                 alert('¡Email verificado exitosamente!');
                 setEmailCode('');
@@ -62,7 +62,7 @@ export default function ProfileSettings({ onBack, showAlert = false }) {
 
     function sendPhoneVerification() {
         setSendingPhoneCode(true);
-        axios.post('/users/send-phone-verification/')
+        axios.post('users/send-phone-verification/')
             .then(res => {
                 alert('Código enviado por SMS a tu teléfono');
                 setShowPhoneVerification(true);
@@ -84,7 +84,7 @@ export default function ProfileSettings({ onBack, showAlert = false }) {
         }
 
         setVerifyingPhone(true);
-        axios.post('/users/verify-phone/', { code: phoneCode })
+        axios.post('users/verify-phone/', { code: phoneCode })
             .then(res => {
                 alert('¡Teléfono verificado exitosamente!');
                 setPhoneCode('');

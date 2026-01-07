@@ -19,7 +19,7 @@ export default function QRScanner({ eventId, onBack }) {
         setResult(null);
 
         // Find registration by entry_code
-        axios.get(`/registrations/?event=${eventId}`)
+        axios.get(`registrations/?event=${eventId}`)
             .then(res => {
                 const payload = res.data;
                 const items = Array.isArray(payload) ? payload : (payload.results || []);
@@ -32,7 +32,7 @@ export default function QRScanner({ eventId, onBack }) {
                 }
 
                 // Validate the QR
-                return axios.post(`/registrations/${registration.id}/validate_qr/`);
+                return axios.post(`registrations/${registration.id}/validate_qr/`);
             })
             .then(res => {
                 if (res) {

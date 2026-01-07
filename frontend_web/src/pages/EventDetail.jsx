@@ -21,8 +21,8 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
         setLoading(true);
         
         Promise.all([
-            axios.get(`/events/${eventId}/`),
-            axios.get(`/registrations/?event=${eventId}&user=${currentUser.id}`)
+            axios.get(`events/${eventId}/`),
+            axios.get(`registrations/?event=${eventId}&user=${currentUser.id}`)
         ])
         .then(([eventRes, regsRes]) => {
             setEvent(eventRes.data);
@@ -62,7 +62,7 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
             if (!confirmPayment) return;
         }
 
-        axios.post('/registrations/', { event: eventId, user: currentUser.id })
+        axios.post('registrations/', { event: eventId, user: currentUser.id })
             .then(res => {
                 setRegistrations(prev => [res.data, ...prev]);
                 const message = event.price && parseFloat(event.price) > 0 
@@ -82,7 +82,7 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
             return;
         }
         
-        axios.delete(`/registrations/${regId}/`)
+        axios.delete(`registrations/${regId}/`)
             .then(() => {
                 setRegistrations(prev => prev.filter(r => r.id !== regId));
                 alert('Inscripción eliminada correctamente.');
@@ -100,7 +100,7 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
         }
 
         // Find user by email first
-        axios.get(`/users/?email=${encodeURIComponent(newAdminEmail)}`)
+        axios.get(`users/?email=${encodeURIComponent(newAdminEmail)}`)
             .then(res => {
                 const users = Array.isArray(res.data) ? res.data : (res.data.results || []);
                 if (users.length === 0) {
@@ -110,11 +110,11 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
                 const user = users[0];
                 
                 // Add user as admin to event
-                return axios.post(`/events/${eventId}/add_admin/`, { user_id: user.id });
+                return axios.post(`events/${eventId}/add_admin/`, { user_id: user.id });
             })
             .then(() => {
                 // Reload event to get updated admins list
-                return axios.get(`/events/${eventId}/`);
+                return axios.get(`events/${eventId}/`);
             })
             .then(res => {
                 setEvent(res.data);
@@ -133,10 +133,10 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
             return;
         }
 
-        axios.post(`/events/${eventId}/remove_admin/`, { user_id: userId })
+        axios.post(`events/${eventId}/remove_admin/`, { user_id: userId })
             .then(() => {
                 // Reload event to get updated admins list
-                return axios.get(`/events/${eventId}/`);
+                return axios.get(`events/${eventId}/`);
             })
             .then(res => {
                 setEvent(res.data);
@@ -149,19 +149,19 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
     }
 
     function loadParticipants() {
-        axios.get(`/events/${eventId}/participants/`)
+        axios.get(`events/${eventId}/participants/`)
             .then(res => setParticipants(res.data))
             .catch(err => console.error('Error loading participants:', err));
     }
 
     function removeParticipant(userId, userName) {
         if (!window.confirm(`¿Eliminar a ${userName} del evento? Se eliminarán todas sus inscripciones.`)) return;
-        axios.post(`/events/${eventId}/remove_participant/`, { user_id: userId })
+        axios.post(`events/${eventId}/remove_participant/`, { user_id: userId })
             .then(() => {
                 alert('Participante eliminado del evento');
                 loadParticipants();
                 // Reload registrations
-                axios.get(`/registrations/?event=${eventId}&user=${currentUser.id}`)
+                axios.get(`registrations/?event=${eventId}&user=${currentUser.id}`)
                     .then(res => {
                         const payload = res.data;
                         const items = Array.isArray(payload) ? payload : (payload.results || []);

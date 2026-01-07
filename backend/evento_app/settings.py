@@ -9,8 +9,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-REEMPLAZA-ESTO-POR-UNA-CLAVE')
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+# Cast explicitly to boolean
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')]
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -100,7 +102,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 AUTH_USER_MODEL = 'users.User'
 
-# Email configuration (read from env; provide sensible defaults for development)
+# Email configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 25))
@@ -109,7 +111,7 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False') == 'True'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@example.com')
 
-# Basic logging config to capture email sending errors and general errors
+# Basic logging config
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -164,7 +166,6 @@ if SENTRY_DSN:
             send_default_pii=os.getenv('SENTRY_SEND_PII', 'False') == 'True',
         )
     except Exception:
-        # If sentry isn't installed or fails to initialize, do not break the app
         pass
 
 # Django REST Framework + Simple JWT
@@ -192,22 +193,11 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-# Google OAuth2
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', '')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', '')
-
-# Facebook OAuth2
-SOCIAL_AUTH_FACEBOOK_KEY = os.getenv('SOCIAL_AUTH_FACEBOOK_KEY', '')
-SOCIAL_AUTH_FACEBOOK_SECRET = os.getenv('SOCIAL_AUTH_FACEBOOK_SECRET', '')
-SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
-SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {'fields': 'id,name,email'}
-
 # Social Auth Configuration
 SOCIAL_AUTH_USER_MODEL = 'users.User'
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/auth/callback/'
 SOCIAL_AUTH_NEW_USER_REDIRECT_URL = '/auth/callback/'
 
-# Auto-verify email for users who login via OAuth
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
@@ -218,37 +208,30 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
     'social_core.pipeline.user.user_details',
-    'users.pipeline.auto_verify_email',  # Custom pipeline to auto-verify
-    'users.pipeline.redirect_with_jwt',  # Generate JWT tokens and store in session
+    'users.pipeline.auto_verify_email',
+    'users.pipeline.redirect_with_jwt',
 )
 
-# CORS: allow local prototype during development
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-    CORS_ALLOW_CREDENTIALS = True
-    # Session settings for OAuth
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SAMESITE = 'Lax'
-    CSRF_COOKIE_SECURE = False
-else:
-    # In production, allow all origins temporarily for testing
-    CORS_ALLOW_ALL_ORIGINS = True
-    CORS_ALLOW_CREDENTIALS = True
-    # Allow all methods and headers for API
-    CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
-    CORS_ALLOW_HEADERS = ['*']
-
-# Frontend URL for generating invitation links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
-# Security settings for production - Permissive for API access
+# CORS & CSRF Configuration
+CORS_ALLOW_CREDENTIALS = True
+# Be strict in production
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    CSRF_TRUSTED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    # Only allow origins defined in env
+    CORS_ALLOWED_ORIGINS = [url.strip() for url in os.getenv('CORS_ALLOWED_ORIGINS', FRONTEND_URL).split(',')]
+    # Only trust specific origins for CSRF
+    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + ['https://*.railway.app']
+
+# Security headers for production
 if not DEBUG:
-    SECURE_SSL_REDIRECT = False  # Render handles SSL
-    SESSION_COOKIE_SECURE = False  # More permissive for testing
-    CSRF_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'SAMEORIGIN'  # Allow embedding
-    # Allow CSRF from anywhere temporarily
-    CSRF_TRUSTED_ORIGINS = ['https://*']
+    X_FRAME_OPTIONS = 'SAMEORIGIN'

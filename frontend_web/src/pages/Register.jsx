@@ -52,8 +52,8 @@ export default function Register({ onRegisterSuccess, onBackToLogin }) {
             return;
         }
 
-        // Submit to backend
-        axios.post('/users/register/', formData)
+        // Submit to backend (relative to API base)
+        axios.post('users/register/', formData)
             .then(res => {
                 setSuccess(true);
                 setTimeout(() => {
