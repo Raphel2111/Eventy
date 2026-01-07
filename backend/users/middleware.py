@@ -60,11 +60,12 @@ class EmailVerificationMiddleware:
                     return self.get_response(request)
             
             # TODOS los usuarios deben verificar su email para usar la API
-            if not getattr(request.user, 'email_verified', False):
-                return JsonResponse({
-                    'detail': 'Debe verificar su correo electrónico antes de acceder a este servicio.',
-                    'error_code': 'EMAIL_NOT_VERIFIED',
-                    'email_verified': False
-                }, status=403)
+            # Se ha desactivado temporalmente para permitir acceso directo
+            # if not getattr(request.user, 'email_verified', False):
+            #     return JsonResponse({
+            #         'detail': 'Debe verificar su correo electrónico antes de acceder a este servicio.',
+            #         'error_code': 'EMAIL_NOT_VERIFIED',
+            #         'email_verified': False
+            #     }, status=403)
         
         return self.get_response(request)

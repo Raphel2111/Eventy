@@ -73,7 +73,7 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
         formDataToSend.append('email', formData.email);
         formDataToSend.append('phone', formData.phone);
         formDataToSend.append('bio', formData.bio);
-        
+
         if (avatarFile) {
             formDataToSend.append('avatar', avatarFile);
         }
@@ -139,13 +139,13 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}>
                     {/* Avatar */}
                     <div style={{ textAlign: 'center' }}>
-                        <img 
-                            src={avatarUrl} 
+                        <img
+                            src={avatarUrl}
                             alt={user.username}
-                            style={{ 
-                                width: 150, 
-                                height: 150, 
-                                borderRadius: '50%', 
+                            style={{
+                                width: 150,
+                                height: 150,
+                                borderRadius: '50%',
                                 objectFit: 'cover',
                                 border: '3px solid var(--primary)'
                             }}
@@ -155,8 +155,8 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
                                 <label htmlFor="avatar-upload" className="btn secondary" style={{ cursor: 'pointer', fontSize: '0.9em' }}>
                                     Cambiar foto
                                 </label>
-                                <input 
-                                    type="file" 
+                                <input
+                                    type="file"
                                     id="avatar-upload"
                                     accept="image/*"
                                     onChange={handleAvatarChange}
@@ -173,7 +173,7 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
                             Rango: {user.role === 'admin' ? 'Administrador' : 'Asistente'}
                         </div>
 
-                        {/* Estado de verificación */}
+                        {/* Estado de verificación - OCULTO
                         <div style={{ marginTop: 12, marginBottom: 12 }}>
                             <div style={{ 
                                 display: 'inline-block', 
@@ -196,6 +196,7 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
                                 </button>
                             )}
                         </div>
+                        */}
 
                         {!editing ? (
                             <>
@@ -227,8 +228,8 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
 
                                 <div className="form-row">
                                     <label>Email</label>
-                                    <input 
-                                        type="email" 
+                                    <input
+                                        type="email"
                                         name="email"
                                         value={formData.email}
                                         onChange={handleChange}
@@ -239,8 +240,8 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
 
                                 <div className="form-row">
                                     <label>Teléfono</label>
-                                    <input 
-                                        type="tel" 
+                                    <input
+                                        type="tel"
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleChange}
@@ -251,7 +252,7 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
 
                                 <div className="form-row">
                                     <label>Biografía</label>
-                                    <textarea 
+                                    <textarea
                                         name="bio"
                                         value={formData.bio}
                                         onChange={handleChange}
@@ -266,9 +267,9 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
                                     <button type="submit" className="btn" disabled={saving}>
                                         {saving ? 'Guardando...' : 'Guardar Cambios'}
                                     </button>
-                                    <button 
-                                        type="button" 
-                                        className="btn secondary" 
+                                    <button
+                                        type="button"
+                                        className="btn secondary"
                                         onClick={() => {
                                             setEditing(false);
                                             setAvatarFile(null);
