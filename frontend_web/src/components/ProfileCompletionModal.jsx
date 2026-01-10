@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 function ProfileCompletionModal({ user, onComplete }) {
     const [firstName, setFirstName] = useState(user.first_name || '');
@@ -18,10 +18,8 @@ function ProfileCompletionModal({ user, onComplete }) {
         setError('');
 
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await axios.patch(`api/users/${user.id}/`,
-                { first_name: firstName, last_name: lastName },
-                { headers: { Authorization: `Bearer ${token}` } }
+            const response = await api.patch(`users/${user.id}/`,
+                { first_name: firstName, last_name: lastName }
             );
 
             if (onComplete) onComplete(response.data);
