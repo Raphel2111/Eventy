@@ -1021,10 +1021,17 @@ class RegistrationViewSet(viewsets.ModelViewSet):
             if not registration:
                 return Response({'valid': False, 'message': 'Código QR no encontrado en el sistema.'}, status=status.HTTP_404_NOT_FOUND)
 
-            # Check permissions: User must be admin of the event
+            # Check permissions: User must be admin of the event OR admin of the group
             user = request.user
             event = registration.event
-            is_admin = user.is_staff or event.admins.filter(pk=user.pk).exists()
+            
+            is_event_admin = event.admins.filter(pk=user.pk).exists()
+            # Check if user is admin of the group related to the event
+            is_group_admin = False
+            if event.group:
+                is_group_admin = event.group.admins.filter(pk=user.pk).exists()
+            
+            is_admin = user.is_staff or is_event_admin or is_group_admin
             
             if not is_admin:
                  return Response({'valid': False, 'message': 'No tienes permisos de administrador para este evento.'}, status=status.HTTP_403_FORBIDDEN)
