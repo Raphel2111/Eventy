@@ -58,6 +58,11 @@ class Registration(models.Model):
     attendee_first_name = models.CharField(max_length=100, blank=True)
     attendee_last_name = models.CharField(max_length=100, blank=True)
     attendee_type = models.CharField(max_length=20, choices=[('member', 'Fallero'), ('guest', 'Invitado'), ('child', 'Niño')], default='member')
+    
+    # New fields for Enhanced QR Management
+    alias = models.CharField(max_length=100, blank=True, help_text='Nombre identificativo del QR (ej: Entrada VIP)')
+    created_at = models.DateTimeField(auto_now_add=True)
+    attended_at = models.DateTimeField(null=True, blank=True)
 
     def get_attendee_name(self):
         if self.attendee_first_name and self.attendee_last_name:

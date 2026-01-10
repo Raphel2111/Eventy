@@ -996,6 +996,52 @@ class RegistrationViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = f'inline; filename="{filename}"'
         return response
 
+    @action(detail=False, methods=['post'], url_path='create_manual_ticket')
+    def create_manual_ticket(self, request):
+        """Allow admins to manually create a ticket/QR for a user."""
+        event_id = request.data.get('event_id')
+        user_id = request.data.get('user_id')
+        alias = request.data.get('alias', '')
+        
+        if not event_id or not user_id:
+            return Response({'detail': 'event_id users_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            event = Event.objects.get(pk=event_id)
+        except Event.DoesNotExist:
+            return Response({'detail': 'Event not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        # Check permissions (Event admin or Group admin)
+        user = request.user
+        is_event_admin = event.admins.filter(pk=user.pk).exists()
+        is_group_admin = event.group and event.group.admins.filter(pk=user.pk).exists()
+        
+        if not (user.is_staff or is_event_admin or is_group_admin):
+            return Response({'detail': 'No permission to issue tickets for this event'}, status=status.HTTP_403_FORBIDDEN)
+            
+        from users.models import User as UserModel
+        try:
+            target_user = UserModel.objects.get(pk=user_id)
+        except UserModel.DoesNotExist:
+             return Response({'detail': 'Target user not found'}, status=status.HTTP_404_NOT_FOUND)
+             
+        # Create registration
+        # Note: We allow multiples, as requested ("Un mismo usuario debe poder generar varios QR")
+        reg = Registration.objects.create(
+            user=target_user,
+            event=event,
+            alias=alias,
+            attendee_type='guest' # Asignado manualmente suele ser invitado o especial
+        )
+        
+        return Response({
+            'detail': 'Ticket created successfully',
+            'entry_code': reg.entry_code,
+            'qr_code_url': reg.qr_code.url if reg.qr_code else None,
+            'alias': reg.alias,
+            'id': reg.id
+        }, status=status.HTTP_201_CREATED)
+
     @action(detail=False, methods=['post'], url_path='validate_qr', permission_classes=[permissions.IsAuthenticated])
     def verify_qr_scan(self, request):
         qr_content = request.data.get('qr_content')
@@ -1043,11 +1089,13 @@ class RegistrationViewSet(viewsets.ModelViewSet):
                     'valid': False, 
                     'message': f'QR YA UTILIZADO anteriormente.',
                     'attendee': attendee_name,
-                    'event': event.name
+                    'event': event.name,
+                    'attended_at': registration.attended_at
                 })
 
             # Mark as used
             registration.used = True
+            registration.attended_at = timezone.now()
             registration.save()
             
             attendee_name = registration.get_attendee_name()

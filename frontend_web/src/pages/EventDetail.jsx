@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../api';
+import EventAccessManager from '../components/EventAccessManager';
 import { fetchCurrentUser } from '../auth';
 
 export default function EventDetail({ eventId, onBack, onViewGroup }) {
@@ -352,64 +353,8 @@ export default function EventDetail({ eventId, onBack, onViewGroup }) {
                 )}
 
                 {/* Mostrar participantes del evento (solo para admins) */}
-                {isEventAdmin && participants.length > 0 && (
-                    <div style={{ marginTop: 16, padding: 12, backgroundColor: '#f0f9ff', borderRadius: 6, border: '1px solid #93c5fd' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                            <strong>👥 Participantes ({participants.length}):</strong>
-                            <div style={{ display: 'flex', gap: 8 }}>
-                                <button
-                                    className="btn secondary"
-                                    onClick={exportRegistrations}
-                                    style={{ fontSize: '12px', padding: '4px 8px', backgroundColor: '#dcfce7', borderColor: '#86efac', color: '#166534' }}
-                                >
-                                    📊 Exportar Excel
-                                </button>
-                                <button
-                                    className="btn secondary"
-                                    onClick={() => setShowParticipants(!showParticipants)}
-                                    style={{ fontSize: '12px', padding: '4px 8px' }}
-                                >
-                                    {showParticipants ? 'Ocultar' : 'Ver Lista'}
-                                </button>
-                            </div>
-                        </div>
-
-                        {showParticipants && (
-                            <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
-                                {participants.map(participant => (
-                                    <div key={participant.id} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '8px 12px',
-                                        backgroundColor: 'white',
-                                        borderRadius: 4,
-                                        fontSize: '13px'
-                                    }}>
-                                        <div>
-                                            <span style={{ fontWeight: '500' }}>{participant.username}</span>
-                                            <span className="muted" style={{ fontSize: '11px', marginLeft: 8 }}>({participant.email})</span>
-                                        </div>
-                                        {participant.id !== currentUser?.id && (
-                                            <button
-                                                onClick={() => removeParticipant(participant.id, participant.username)}
-                                                style={{
-                                                    padding: '4px 10px',
-                                                    fontSize: '11px',
-                                                    backgroundColor: '#fee2e2',
-                                                    border: '1px solid #fca5a5',
-                                                    borderRadius: 3,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                🗑️ Eliminar
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                {isEventAdmin && (
+                    <EventAccessManager event={event} currentUser={currentUser} />
                 )}
 
             </div>
