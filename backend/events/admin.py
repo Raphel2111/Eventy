@@ -5,7 +5,7 @@ from .models import GroupAccessToken, GroupInvitation, Wallet, Transaction
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'date', 'location', 'max_qr_codes')
+    list_display = ('id', 'name', 'date', 'location', 'max_qr_codes', 'registration_deadline')
     search_fields = ('name', 'description')
     list_filter = ('date',)
 

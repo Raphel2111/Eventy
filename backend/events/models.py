@@ -17,6 +17,7 @@ class Event(models.Model):
     requires_approval = models.BooleanField(default=False, help_text='Si es True, las solicitudes de acceso requieren aprobación de un admin')
     is_public = models.BooleanField(default=True, help_text='Si es True, el evento es visible para todos. Si es False, solo visible para miembros del grupo.')
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text='Precio de entrada al evento. 0 = gratis')
+    registration_deadline = models.DateTimeField(null=True, blank=True, help_text='Fecha límite para inscribirse. Dejar en blanco para ilimitado.')
     
     def __str__(self):
         return self.name
@@ -52,6 +53,20 @@ class Registration(models.Model):
     entry_code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     qr_code = models.ImageField(upload_to='qrcodes', blank=True)
     used = models.BooleanField(default=False)
+    
+    # Guest/Multi-registration fields
+    attendee_first_name = models.CharField(max_length=100, blank=True)
+    attendee_last_name = models.CharField(max_length=100, blank=True)
+    attendee_type = models.CharField(max_length=20, choices=[('member', 'Fallero'), ('guest', 'Invitado'), ('child', 'Niño')], default='member')
+
+    def get_attendee_name(self):
+        if self.attendee_first_name and self.attendee_last_name:
+            return f"{self.attendee_first_name} {self.attendee_last_name}"
+        # Fallback to user's name
+        if hasattr(self.user, 'get_full_name') and self.user.get_full_name():
+            return self.user.get_full_name()
+        return self.user.username
+
     def save(self, *args, **kwargs):
         # Only generate and save a QR code if one isn't already present.
         if not self.qr_code:

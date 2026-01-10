@@ -161,6 +161,55 @@ class EventViewSet(viewsets.ModelViewSet):
         deleted_count, _ = Registration.objects.filter(event=event, user=u).delete()
         return Response({'detail': f'{deleted_count} registration(s) removed'})
 
+    @action(detail=True, methods=['get'], url_path='export_registrations')
+    def export_registrations(self, request, pk=None):
+        """Export registrations to CSV"""
+        event = self.get_object()
+        
+        # Check permissions
+        user = request.user
+        is_admin = user.is_staff or event.admins.filter(pk=user.pk).exists()
+        if not is_admin:
+             return Response({'detail': 'No tienes permisos para exportar.'}, status=status.HTTP_403_FORBIDDEN)
+             
+        import csv
+        from django.http import HttpResponse
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="participantes_{event.id}.csv"'
+        response.write(u'\ufeff'.encode('utf8')) # BOM for Excel to open UTF-8 correctly
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Usuario (Cuenta)', 'Email', 'Teléfono', 'Asistente (Nombre)', 'Tipo', 'Usado', 'Código'])
+        
+        registrations = Registration.objects.filter(event=event).select_related('user')
+        
+        for reg in registrations:
+            # Determine attendee name
+            attendee_name = reg.get_attendee_name()
+            
+            # Determine attendee type label
+            type_map = {'member': 'Fallero', 'guest': 'Invitado', 'child': 'Niño'}
+            type_label = type_map.get(reg.attendee_type, reg.attendee_type)
+            
+            # User info
+            user_full_name = reg.user.get_full_name() or reg.user.username
+            user_email = reg.user.email
+            user_phone = getattr(reg.user, 'phone', '')
+            
+            writer.writerow([
+                reg.id,
+                user_full_name,
+                user_email,
+                user_phone,
+                attendee_name,
+                type_label,
+                'Sí' if reg.used else 'No',
+                str(reg.entry_code)
+            ])
+            
+        return response
+
     @action(detail=True, methods=['post'], url_path='request_access', permission_classes=[permissions.IsAuthenticated])
     def request_access(self, request, pk=None):
         """Solicitar acceso a un evento que requiere aprobación"""
@@ -833,11 +882,18 @@ class RegistrationViewSet(viewsets.ModelViewSet):
         event = None
         if event_id:
             event = Event.objects.filter(pk=event_id.pk).first()
-            if event and event.max_qr_codes:
-                current_count = Registration.objects.filter(event=event).count()
-                if current_count >= event.max_qr_codes:
+            if event:
+                # Check registration deadline
+                if event.registration_deadline and timezone.now() > event.registration_deadline:
                     from rest_framework.exceptions import ValidationError
-                    raise ValidationError({'detail': f'Límite de registros alcanzado. Este evento solo permite {event.max_qr_codes} registros/QR.'})
+                    raise ValidationError({'detail': 'El plazo de inscripción para este evento ha finalizado.'})
+
+                # Check max_qr_codes limit
+                if event.max_qr_codes:
+                    current_count = Registration.objects.filter(event=event).count()
+                    if current_count >= event.max_qr_codes:
+                        from rest_framework.exceptions import ValidationError
+                        raise ValidationError({'detail': f'Límite de registros alcanzado. Este evento solo permite {event.max_qr_codes} registros/QR.'})
         
         # Check if event has a price and process payment
         user = request.user
@@ -935,15 +991,68 @@ class RegistrationViewSet(viewsets.ModelViewSet):
         user = request.user
         event = registration.event
         is_admin = user.is_staff or event.admins.filter(pk=user.pk).exists()
-        if not (is_admin or registration.user == user):
-            return Response({'detail': 'No permission to download this ticket.'}, status=status.HTTP_403_FORBIDDEN)
-
-        # Use helper to build PDF bytes
-        pdf_bytes = generate_ticket_pdf_bytes(registration)
         filename = f'ticket_{registration.entry_code}.pdf'
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
         return response
+
+    @action(detail=False, methods=['post'], url_path='validate_qr', permission_classes=[permissions.IsAuthenticated])
+    def verify_qr_scan(self, request):
+        qr_content = request.data.get('qr_content')
+        if not qr_content:
+            return Response({'valid': False, 'message': 'No QR content provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Assuming qr_content is the UUID string
+        try:
+            # Try to match the UUID directly
+            registration = Registration.objects.filter(entry_code=qr_content).first()
+            if not registration:
+                # If content is a URL, try to extract UUID (rudimentary check)
+                import uuid
+                try:
+                    # Look for uuid pattern
+                    parts = qr_content.split('/')
+                    possible_id = parts[-1]
+                    uuid.UUID(possible_id) # validates format
+                    registration = Registration.objects.filter(entry_code=possible_id).first()
+                except ValueError:
+                    pass
+
+            if not registration:
+                return Response({'valid': False, 'message': 'Código QR no encontrado en el sistema.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Check permissions: User must be admin of the event
+            user = request.user
+            event = registration.event
+            is_admin = user.is_staff or event.admins.filter(pk=user.pk).exists()
+            
+            if not is_admin:
+                 return Response({'valid': False, 'message': 'No tienes permisos de administrador para este evento.'}, status=status.HTTP_403_FORBIDDEN)
+
+            # Check usage
+            if registration.used:
+                attendee_name = registration.get_attendee_name()
+                return Response({
+                    'valid': False, 
+                    'message': f'QR YA UTILIZADO anteriormente.',
+                    'attendee': attendee_name,
+                    'event': event.name
+                })
+
+            # Mark as used
+            registration.used = True
+            registration.save()
+            
+            attendee_name = registration.get_attendee_name()
+            return Response({
+                'valid': True, 
+                'message': 'Entrada Válida. Acceso permitido.', 
+                'attendee': attendee_name,
+                'event': event.name
+            })
+
+        except Exception as e:
+            return Response({'valid': False, 'message': f'Error validando: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'], url_path='validate_qr')
     def validate_qr(self, request, pk=None):

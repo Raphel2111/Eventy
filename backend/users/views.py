@@ -66,6 +66,14 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         return super().partial_update(request, *args, **kwargs)
 
+    @action(detail=False, methods=['get'], url_path='me')
+    def me(self, request):
+        """Return the currently logged in user's profile."""
+        if not request.user.is_authenticated:
+            return Response({'detail': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'], url_path='for_select')
     def for_select(self, request):
         """Return a minimal list of users for populating selects in the frontend.

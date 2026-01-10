@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'avatar', 'avatar_url']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'avatar', 'avatar_url']
     
     def get_avatar_url(self, obj):
         if obj.avatar:
@@ -40,7 +40,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Registration
-        fields = ['id','user','event','entry_code','qr_code','qr_url','used']
+        fields = ['id','user','event','entry_code','qr_code','qr_url','used', 'attendee_first_name', 'attendee_last_name', 'attendee_type']
         read_only_fields = ['entry_code','qr_code','qr_url']
 
     def get_qr_url(self, obj):

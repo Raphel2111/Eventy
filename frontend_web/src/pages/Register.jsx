@@ -5,6 +5,8 @@ export default function Register({ onRegisterSuccess, onBackToLogin }) {
     const [formData, setFormData] = useState({
         username: '',
         email: '',
+        first_name: '',
+        last_name: '',
         phone: '',
         password: '',
         password_confirm: ''
@@ -31,6 +33,12 @@ export default function Register({ onRegisterSuccess, onBackToLogin }) {
         const newErrors = {};
         if (!formData.username.trim()) {
             newErrors.username = 'El nombre de usuario es obligatorio';
+        }
+        if (!formData.first_name.trim()) {
+            newErrors.first_name = 'El nombre es obligatorio';
+        }
+        if (!formData.last_name.trim()) {
+            newErrors.last_name = 'Los apellidos son obligatorios';
         }
         if (!formData.email.trim()) {
             newErrors.email = 'El email es obligatorio';
@@ -111,6 +119,42 @@ export default function Register({ onRegisterSuccess, onBackToLogin }) {
                         {errors.username && (
                             <div style={{ color: 'var(--danger)', fontSize: '0.85em', marginTop: 4 }}>
                                 {Array.isArray(errors.username) ? errors.username[0] : errors.username}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="form-row">
+                        <label htmlFor="first_name">Nombre *</label>
+                        <input
+                            type="text"
+                            id="first_name"
+                            name="first_name"
+                            value={formData.first_name}
+                            onChange={handleChange}
+                            disabled={loading}
+                            style={{ borderColor: errors.first_name ? 'var(--danger)' : undefined }}
+                        />
+                        {errors.first_name && (
+                            <div style={{ color: 'var(--danger)', fontSize: '0.85em', marginTop: 4 }}>
+                                {Array.isArray(errors.first_name) ? errors.first_name[0] : errors.first_name}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="form-row">
+                        <label htmlFor="last_name">Apellidos *</label>
+                        <input
+                            type="text"
+                            id="last_name"
+                            name="last_name"
+                            value={formData.last_name}
+                            onChange={handleChange}
+                            disabled={loading}
+                            style={{ borderColor: errors.last_name ? 'var(--danger)' : undefined }}
+                        />
+                        {errors.last_name && (
+                            <div style={{ color: 'var(--danger)', fontSize: '0.85em', marginTop: 4 }}>
+                                {Array.isArray(errors.last_name) ? errors.last_name[0] : errors.last_name}
                             </div>
                         )}
                     </div>

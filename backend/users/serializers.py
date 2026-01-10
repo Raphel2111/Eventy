@@ -7,7 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'phone', 'avatar', 'avatar_url', 'bio', 'email_verified', 'phone_verified']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone', 'avatar', 'avatar_url', 'bio', 'email_verified', 'phone_verified']
         read_only_fields = ['avatar_url', 'email_verified', 'phone_verified']
     
     def get_avatar_url(self, obj):
@@ -22,10 +22,12 @@ class UserSerializer(serializers.ModelSerializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     password_confirm = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone', 'password', 'password_confirm']
+        fields = ['username', 'email', 'first_name', 'last_name', 'phone', 'password', 'password_confirm']
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -47,6 +49,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
             phone=validated_data.get('phone', ''),
             password=validated_data['password']
         )
@@ -57,7 +61,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating user profile"""
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone', 'bio', 'avatar']
+        fields = ['username', 'email', 'first_name', 'last_name', 'phone', 'bio', 'avatar']
         read_only_fields = ['username']  # No permitir cambiar username
     
     def validate_email(self, value):

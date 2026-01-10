@@ -4,13 +4,13 @@ import EventDetail from './EventDetail';
 import GroupDetail from './GroupDetail';
 import { fetchCurrentUser } from '../auth';
 
-export default function EventList(){
+export default function EventList() {
     const [events, setEvents] = useState([]);
     const [selectedEventId, setSelectedEventId] = useState(null);
     const [selectedGroupId, setSelectedGroupId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
-    
+
     // Filtros
     const [searchText, setSearchText] = useState('');
     const [visibilityFilter, setVisibilityFilter] = useState('all'); // 'all', 'public', 'private'
@@ -31,9 +31,9 @@ export default function EventList(){
             .catch(err => console.error('Error loading groups:', err));
     }, []);
 
-    useEffect(()=>{
+    useEffect(() => {
         loadEvents();
-    },[searchText, visibilityFilter, isFreeFilter, orderBy, selectedGroup]);
+    }, [searchText, visibilityFilter, isFreeFilter, orderBy, selectedGroup]);
 
     function loadEvents() {
         setLoading(true);
@@ -43,14 +43,14 @@ export default function EventList(){
         if (isFreeFilter) params.is_free = 'true';
         if (orderBy) params.order_by = orderBy;
         if (selectedGroup) params.group = selectedGroup;
-        
+
         axios.get('events/', { params })
-            .then(res=>{
+            .then(res => {
                 const payload = res.data;
                 const items = Array.isArray(payload) ? payload : (payload.results || []);
                 setEvents(items);
             })
-            .catch(()=>{})
+            .catch(() => { })
             .finally(() => setLoading(false));
     }
 
@@ -58,7 +58,7 @@ export default function EventList(){
         if (!window.confirm(`¿Estás seguro de eliminar el evento "${eventName}"? Esta acción no se puede deshacer y eliminará todas las inscripciones asociadas.`)) {
             return;
         }
-        
+
         axios.delete(`events/${eventId}/`)
             .then(() => {
                 setEvents(prev => prev.filter(e => e.id !== eventId));
@@ -81,8 +81,8 @@ export default function EventList(){
     }
 
     if (selectedEventId) {
-        return <EventDetail 
-            eventId={selectedEventId} 
+        return <EventDetail
+            eventId={selectedEventId}
             onBack={() => setSelectedEventId(null)}
             onViewGroup={(groupId) => {
                 setSelectedEventId(null);
@@ -94,8 +94,8 @@ export default function EventList(){
     if (loading) {
         return (
             <div className="container">
-                <div className="card" style={{textAlign:'center',padding:'40px'}}>
-                    <p style={{color:'var(--muted)'}}>Cargando eventos...</p>
+                <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
+                    <p style={{ color: 'var(--muted)' }}>Cargando eventos...</p>
                 </div>
             </div>
         );
@@ -103,45 +103,45 @@ export default function EventList(){
 
     return (
         <div className="container">
-            <div style={{marginBottom:'28px'}}>
-                <h1 style={{margin:'0 0 8px 0',fontSize:'28px',fontWeight:'700'}}>Eventos Disponibles</h1>
-                <p style={{margin:0,color:'var(--muted)'}}>
+            <div style={{ marginBottom: '28px' }}>
+                <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '700' }}>Eventos Disponibles</h1>
+                <p style={{ margin: 0, color: 'var(--muted)' }}>
                     {events.length} {events.length === 1 ? 'evento' : 'eventos'} encontrados
                 </p>
             </div>
 
             {/* Barra de búsqueda y filtros */}
-            <div className="card" style={{marginBottom:'24px',padding:'20px'}}>
-                <div style={{marginBottom:'16px'}}>
+            <div className="card" style={{ marginBottom: '24px', padding: '20px' }}>
+                <div style={{ marginBottom: '16px' }}>
                     <input
                         type="text"
                         placeholder="🔍 Buscar eventos por nombre, descripción o ubicación..."
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
                         style={{
-                            width:'100%',
-                            padding:'12px 16px',
-                            fontSize:'14px',
-                            border:'1px solid #cbd5e1',
-                            borderRadius:'8px',
-                            outline:'none',
-                            transition:'border-color 0.2s'
+                            width: '100%',
+                            padding: '12px 16px',
+                            fontSize: '14px',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '8px',
+                            outline: 'none',
+                            transition: 'border-color 0.2s'
                         }}
                         onFocus={(e) => e.target.style.borderColor = '#2563eb'}
                         onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
                     />
                 </div>
 
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))',gap:'12px'}}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                     {/* Filtro de visibilidad */}
                     <div>
-                        <label style={{display:'block',fontSize:'12px',fontWeight:'600',marginBottom:'4px',color:'#64748b'}}>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>
                             Visibilidad
                         </label>
-                        <select 
-                            value={visibilityFilter} 
+                        <select
+                            value={visibilityFilter}
                             onChange={(e) => setVisibilityFilter(e.target.value)}
-                            style={{width:'100%',padding:'8px',fontSize:'14px',border:'1px solid #cbd5e1',borderRadius:'6px'}}
+                            style={{ width: '100%', padding: '8px', fontSize: '14px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
                         >
                             <option value="all">Todos</option>
                             <option value="public">Públicos</option>
@@ -151,13 +151,13 @@ export default function EventList(){
 
                     {/* Filtro de grupo */}
                     <div>
-                        <label style={{display:'block',fontSize:'12px',fontWeight:'600',marginBottom:'4px',color:'#64748b'}}>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>
                             Grupo
                         </label>
-                        <select 
-                            value={selectedGroup} 
+                        <select
+                            value={selectedGroup}
                             onChange={(e) => setSelectedGroup(e.target.value)}
-                            style={{width:'100%',padding:'8px',fontSize:'14px',border:'1px solid #cbd5e1',borderRadius:'6px'}}
+                            style={{ width: '100%', padding: '8px', fontSize: '14px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
                         >
                             <option value="">Todos los grupos</option>
                             {groups.map(g => (
@@ -168,12 +168,12 @@ export default function EventList(){
 
                     {/* Filtro de precio */}
                     <div>
-                        <label style={{display:'flex',alignItems:'center',gap:'8px',cursor:'pointer',fontSize:'14px',marginTop:'20px'}}>
-                            <input 
-                                type="checkbox" 
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', marginTop: '20px' }}>
+                            <input
+                                type="checkbox"
                                 checked={isFreeFilter}
                                 onChange={(e) => setIsFreeFilter(e.target.checked)}
-                                style={{width:'16px',height:'16px',cursor:'pointer'}}
+                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                             />
                             Solo eventos gratis
                         </label>
@@ -181,13 +181,13 @@ export default function EventList(){
 
                     {/* Ordenamiento */}
                     <div>
-                        <label style={{display:'block',fontSize:'12px',fontWeight:'600',marginBottom:'4px',color:'#64748b'}}>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>
                             Ordenar por
                         </label>
-                        <select 
-                            value={orderBy} 
+                        <select
+                            value={orderBy}
                             onChange={(e) => setOrderBy(e.target.value)}
-                            style={{width:'100%',padding:'8px',fontSize:'14px',border:'1px solid #cbd5e1',borderRadius:'6px'}}
+                            style={{ width: '100%', padding: '8px', fontSize: '14px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
                         >
                             <option value="-date">Más recientes</option>
                             <option value="date">Más próximos</option>
@@ -199,71 +199,76 @@ export default function EventList(){
             </div>
 
             {events.length === 0 ? (
-                <div className="card" style={{textAlign:'center',padding:'40px'}}>
-                    <div style={{fontSize:'32px',marginBottom:'12px'}}>📭</div>
-                    <h3 style={{margin:'0 0 8px 0',color:'var(--muted)'}}>Sin eventos disponibles</h3>
-                    <p style={{margin:0,color:'var(--muted)',fontSize:'14px'}}>Por el momento no hay eventos disponibles. Vuelve más tarde.</p>
+                <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>📭</div>
+                    <h3 style={{ margin: '0 0 8px 0', color: 'var(--muted)' }}>Sin eventos disponibles</h3>
+                    <p style={{ margin: 0, color: 'var(--muted)', fontSize: '14px' }}>Por el momento no hay eventos disponibles. Vuelve más tarde.</p>
                 </div>
             ) : (
                 <div className="grid">
                     {events.map(ev => (
                         <div className="card event-card" key={ev.id}>
-                            <div style={{flex:1}}>
-                                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'8px'}}>
-                                    <h3 style={{fontSize:'18px',fontWeight:'600',margin:0}}>{ev.name}</h3>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{ev.name}</h3>
                                     <span style={{
-                                        fontSize:'11px',
-                                        padding:'4px 8px',
-                                        borderRadius:'12px',
-                                        fontWeight:'600',
+                                        fontSize: '11px',
+                                        padding: '4px 8px',
+                                        borderRadius: '12px',
+                                        fontWeight: '600',
                                         backgroundColor: ev.is_public ? '#dbeafe' : '#fee2e2',
                                         color: ev.is_public ? '#1e40af' : '#991b1b'
                                     }}>
                                         {ev.is_public ? '🌍 Público' : '🔒 Privado'}
                                     </span>
                                 </div>
-                                <p className="muted" style={{marginBottom:'12px'}}>
-                                    📅 {ev.date ? new Date(ev.date).toLocaleDateString('es-ES', {year:'numeric',month:'long',day:'numeric'}) : 'Fecha desconocida'}
+                                <p className="muted" style={{ marginBottom: '12px' }}>
+                                    📅 {ev.date ? new Date(ev.date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Fecha desconocida'}
                                 </p>
+                                {ev.registration_deadline && (
+                                    <p style={{ marginBottom: '12px', fontSize: '13px', color: '#d97706', fontWeight: 500 }}>
+                                        🗓️ Cierre inscripción: {new Date(ev.registration_deadline).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                )}
                                 {ev.location && (
-                                    <p className="muted" style={{marginBottom:'12px',fontSize:'14px'}}>
+                                    <p className="muted" style={{ marginBottom: '12px', fontSize: '14px' }}>
                                         📍 {ev.location}
                                     </p>
                                 )}
                                 {ev.group_name && (
-                                    <p style={{marginBottom:'12px',fontSize:'14px',color:'#2563eb',fontWeight:500}}>
+                                    <p style={{ marginBottom: '12px', fontSize: '14px', color: '#2563eb', fontWeight: 500 }}>
                                         📂 Grupo: {ev.group_name}
                                     </p>
                                 )}
                                 {ev.price !== undefined && (
-                                    <p style={{marginBottom:'12px',fontSize:'14px',fontWeight:'600',color: ev.price > 0 ? '#059669' : '#6b7280'}}>
+                                    <p style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600', color: ev.price > 0 ? '#059669' : '#6b7280' }}>
                                         💰 {ev.price > 0 ? `$${parseFloat(ev.price).toFixed(2)}` : 'GRATIS'}
                                     </p>
                                 )}
                                 {ev.description && (
                                     <p style={{
-                                        marginTop:0,
-                                        marginBottom:'16px',
-                                        fontSize:'14px',
-                                        lineHeight:'1.5',
-                                        color:'#334155'
+                                        marginTop: 0,
+                                        marginBottom: '16px',
+                                        fontSize: '14px',
+                                        lineHeight: '1.5',
+                                        color: '#334155'
                                     }}>
                                         {ev.description.substring(0, 120)}
                                         {ev.description.length > 120 ? '...' : ''}
                                     </p>
                                 )}
                                 {ev.capacity && (
-                                    <p className="muted" style={{fontSize:'12px'}}>
+                                    <p className="muted" style={{ fontSize: '12px' }}>
                                         👥 Capacidad: {ev.capacity}
                                     </p>
                                 )}
                             </div>
-                            <div style={{display:'flex',gap:8,marginTop:'12px'}}>
-                                <button className="btn" onClick={() => setSelectedEventId(ev.id)} style={{flex:1}}>
+                            <div style={{ display: 'flex', gap: 8, marginTop: '12px' }}>
+                                <button className="btn" onClick={() => setSelectedEventId(ev.id)} style={{ flex: 1 }}>
                                     Ver Detalles
                                 </button>
                                 {isEventAdmin(ev) && (
-                                    <button onClick={() => deleteEvent(ev.id, ev.name)} className="btn" style={{backgroundColor:'#ef4444',borderColor:'#dc2626',padding:'8px 16px'}}>
+                                    <button onClick={() => deleteEvent(ev.id, ev.name)} className="btn" style={{ backgroundColor: '#ef4444', borderColor: '#dc2626', padding: '8px 16px' }}>
                                         🗑️
                                     </button>
                                 )}

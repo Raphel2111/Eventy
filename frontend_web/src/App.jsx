@@ -12,6 +12,8 @@ import Register from './pages/Register';
 import { fetchCurrentUser } from './auth';
 import ErrorBoundary from './ErrorBoundary';
 
+import ProfileCompletionModal from './components/ProfileCompletionModal';
+
 function App() {
     const [view, setView] = useState('events');
     const [authenticated, setAuthenticated] = useState(!!localStorage.getItem('access_token'));
@@ -21,30 +23,33 @@ function App() {
     const [emailNotVerifiedAlert, setEmailNotVerifiedAlert] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+    // Check if user needs to complete profile
+    const needsProfileCompletion = authenticated && currentUser && (!currentUser.first_name || !currentUser.last_name);
+
     // Escuchar evento de email no verificado
     // Escuchar evento de email no verificado
     /*
     useEffect(() => {
         const handleEmailNotVerified = (event) => {
-            setEmailNotVerifiedAlert(true);
-            setView('profile'); // Redirigir al perfil para verificación
+                    setEmailNotVerifiedAlert(true);
+                setView('profile'); // Redirigir al perfil para verificación
         };
 
-        window.addEventListener('email-not-verified', handleEmailNotVerified);
+                window.addEventListener('email-not-verified', handleEmailNotVerified);
         return () => window.removeEventListener('email-not-verified', handleEmailNotVerified);
     }, []);
-    */
+                */
 
     // Verificar automáticamente al cargar usuario si no está verificado
     // Verificar automáticamente al cargar usuario si no está verificado
     /*
     useEffect(() => {
         if (currentUser && !currentUser.email_verified && authenticated) {
-            setView('profile'); // Abrir automáticamente el perfil
-            setEmailNotVerifiedAlert(true);
+                    setView('profile'); // Abrir automáticamente el perfil
+                setEmailNotVerifiedAlert(true);
         }
     }, [currentUser, authenticated]);
-    */
+                */
 
     // Handle URL hash routing for invitations and OAuth
     useEffect(() => {
@@ -123,6 +128,12 @@ function App() {
     }, [authenticated]);
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            {needsProfileCompletion && (
+                <ProfileCompletionModal
+                    user={currentUser}
+                    onComplete={(updatedUser) => setCurrentUser(updatedUser)}
+                />
+            )}
             <nav>
                 <div className="nav-container">
                     <div className="nav-header">

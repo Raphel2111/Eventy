@@ -10,6 +10,8 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
     const [saving, setSaving] = useState(false);
     const [showVerification, setShowVerification] = useState(false);
     const [formData, setFormData] = useState({
+        first_name: '',
+        last_name: '',
         email: '',
         phone: '',
         bio: ''
@@ -35,10 +37,16 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
             .then(res => {
                 setUser(res.data);
                 setFormData({
+                    first_name: res.data.first_name || '',
+                    last_name: res.data.last_name || '',
                     email: res.data.email || '',
                     phone: res.data.phone || '',
                     bio: res.data.bio || ''
                 });
+                // Si faltan datos obligatorios, abrir modo edición
+                if (!res.data.first_name || !res.data.last_name) {
+                    setEditing(true);
+                }
             })
             .catch(err => console.error('Error loading user:', err))
             .finally(() => setLoading(false));
@@ -70,6 +78,8 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
         setErrors({});
 
         const formDataToSend = new FormData();
+        formDataToSend.append('first_name', formData.first_name);
+        formDataToSend.append('last_name', formData.last_name);
         formDataToSend.append('email', formData.email);
         formDataToSend.append('phone', formData.phone);
         formDataToSend.append('bio', formData.bio);
@@ -117,6 +127,7 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
     }
 
     const avatarUrl = avatarPreview || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random&size=200`;
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
 
     // Mostrar componente de verificación si está activado
     if (showVerification) {
@@ -168,35 +179,27 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
 
                     {/* Info */}
                     <div style={{ flex: 1 }}>
-                        <h2 style={{ marginTop: 0 }}>{user.username}</h2>
+                        <h2 style={{ marginTop: 0 }}>
+                            {fullName || user.username}
+                            {fullName && <span className="muted" style={{ fontSize: '0.6em', marginLeft: 10, fontWeight: 'normal' }}>({user.username})</span>}
+                        </h2>
                         <div className="muted" style={{ marginBottom: 8 }}>
                             Rango: {user.role === 'admin' ? 'Administrador' : 'Asistente'}
                         </div>
 
-                        {/* Estado de verificación - OCULTO
-                        <div style={{ marginTop: 12, marginBottom: 12 }}>
-                            <div style={{ 
-                                display: 'inline-block', 
-                                padding: '6px 12px', 
-                                borderRadius: 'var(--radius)',
-                                backgroundColor: user.email_verified ? '#10b981' : '#f59e0b',
-                                color: 'white',
-                                fontSize: '0.85em',
-                                fontWeight: 600
+                        {(!user.first_name || !user.last_name) && !editing && (
+                            <div style={{
+                                backgroundColor: '#fee2e2',
+                                color: '#991b1b',
+                                padding: '10px',
+                                borderRadius: '8px',
+                                marginBottom: '16px',
+                                fontSize: '0.9em',
+                                border: '1px solid #fca5a5'
                             }}>
-                                {user.email_verified ? '✓ Email verificado' : '⚠ Email no verificado'}
+                                ⚠️ <strong>Acción Requerida:</strong> Por favor completa tu Nombre y Apellidos.
                             </div>
-                            {!user.email_verified && (
-                                <button 
-                                    className="btn" 
-                                    onClick={() => setShowVerification(true)}
-                                    style={{ marginLeft: 12, fontSize: '0.9em' }}
-                                >
-                                    Verificar ahora
-                                </button>
-                            )}
-                        </div>
-                        */}
+                        )}
 
                         {!editing ? (
                             <>
@@ -225,6 +228,35 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
                                         {errors.general}
                                     </div>
                                 )}
+
+                                <div className="form-row">
+                                    <div style={{ display: 'flex', gap: 10 }}>
+                                        <div style={{ flex: 1 }}>
+                                            <label>Nombre *</label>
+                                            <input
+                                                type="text"
+                                                name="first_name"
+                                                value={formData.first_name}
+                                                onChange={handleChange}
+                                                disabled={saving}
+                                                placeholder="Nombre"
+                                            />
+                                            {errors.first_name && <div style={{ color: 'var(--danger)', fontSize: '0.85em' }}>{errors.first_name}</div>}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <label>Apellidos *</label>
+                                            <input
+                                                type="text"
+                                                name="last_name"
+                                                value={formData.last_name}
+                                                onChange={handleChange}
+                                                disabled={saving}
+                                                placeholder="Apellidos"
+                                            />
+                                            {errors.last_name && <div style={{ color: 'var(--danger)', fontSize: '0.85em' }}>{errors.last_name}</div>}
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div className="form-row">
                                     <label>Email</label>
@@ -275,6 +307,8 @@ export default function UserProfile({ userId, onBack, showVerificationAlert, onC
                                             setAvatarFile(null);
                                             setAvatarPreview(null);
                                             setFormData({
+                                                first_name: user.first_name || '',
+                                                last_name: user.last_name || '',
                                                 email: user.email || '',
                                                 phone: user.phone || '',
                                                 bio: user.bio || ''
